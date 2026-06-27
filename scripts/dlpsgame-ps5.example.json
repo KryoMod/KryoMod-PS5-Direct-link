@@ -1,0 +1,100 @@
+{
+  "name": "dlpsgame PS5",
+  "version": 1,
+  "generatedAt": "2026-06-21T20:26:48.991792+00:00",
+  "source": "https://dlpsgame.com/category/ps5/",
+  "packages": [
+    {
+      "titleId": "PPSA26528",
+      "title": "Code Violet",
+      "version": "01.028",
+      "category": "game",
+      "posterUrl": "https://dlpsgame.com/wp-content/uploads/2026/06/3-re.jpg",
+      "description": "Tags: PPSA26528, v1.028",
+      "downloadLinks": [
+        {
+          "name": "Rootz",
+          "url": "https://www.rootz.so/d/QPXuK"
+        },
+        {
+          "name": "Mediafire",
+          "url": "https://www.mediafire.com/file/gt6pax0y57hn7qy/[DLPSGAME.COM]-01.028+PPSA26528.part01.rar/file"
+        },
+        {
+          "name": "Akia",
+          "url": "https://akirabox.com/2bJG80eJ6GOB/file"
+        },
+        {
+          "name": "Viki",
+          "url": "https://vikingfile.com/f/bDvdbqQYWI"
+        },
+        {
+          "name": "1File",
+          "url": "https://1fichier.com/?yfre37fes6fg2b31k56g"
+        },
+        {
+          "name": "Buzz",
+          "url": "https://buzzheavier.com/pnxw8llaozwe"
+        }
+      ],
+      "sizeBytes": null,
+      "downloadSource": "https://dlpsgame.com/code-violet-ps5/"
+    },
+    {
+      "titleId": "PPSA01968",
+      "title": "Death Stranding Directors Cut",
+      "version": "01.004",
+      "category": "game",
+      "posterUrl": "https://dlpsgame.com/wp-content/uploads/2026/06/1-fjhg-1.jpg",
+      "description": "Tags: PPSA01968, v1.004, 2.xx, EUR\nSize: 54GB\nCredits: Pippo26442999 x SiESPTA\nThanks: SiESPTA for the Files and drakmor for ampr-emu",
+      "downloadLinks": [
+        {
+          "name": "Rootz",
+          "url": "https://www.rootz.so/d/9WKsC"
+        },
+        {
+          "name": "Mediafire",
+          "url": "https://www.mediafire.com/file/n8trrm7r36q00u9/[DLPSGAME.COM]-01.004+PPSA01968.part01.rar/file"
+        },
+        {
+          "name": "Akia",
+          "url": "https://akirabox.com/jar3Xak6Nz2d/file"
+        },
+        {
+          "name": "Viki",
+          "url": "https://vikingfile.com/f/sjFAw5MGf1"
+        },
+        {
+          "name": "1File",
+          "url": "https://1fichier.com/?vem83fu0q3fnzg8861sr"
+        },
+        {
+          "name": "Buzz",
+          "url": "https://buzzheavier.com/0u3r65w1uk4k"
+        },
+        {
+          "name": "Akia",
+          "url": "https://akirabox.com/obj3jd07rGDx/file"
+        },
+        {
+          "name": "Viki",
+          "url": "https://vikingfile.com/f/eMb6MyANiR"
+        },
+        {
+          "name": "Data",
+          "url": "https://datanodes.to/z5wv842jnrn8"
+        },
+        {
+          "name": "Filek",
+          "url": "https://filekeeper.net/q8qt9gp28xfq"
+        },
+        {
+          "name": "Vault",
+          "url": "https://datavaults.co/1zbpn8x8imgr"
+        }
+      ],
+      "sizeBytes": 57982058496,
+      "downloadSource": "https://dlpsgame.com/death-stranding-directors-cut-ps5/"
+    }
+  ]
+}

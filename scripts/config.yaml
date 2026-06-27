@@ -1,0 +1,89 @@
+# Configuration centrale du pipeline dlpsgame-ps5-catalog
+# Tous les scripts lisent ce fichier (fallback vers les valeurs par défaut si absent)
+
+sources:
+  dlpsgame:
+    base_url: "https://dlpsgame.com"
+    ps5_category_id: 63019
+    category_url: "/category/ps5/"
+    list_url: "/list-game-ps5/"
+    api_url: "/wp-json/wp/v2/posts"
+    http_backend: "flaresolverr"  # "curl" (local) or "flaresolverr" (CI)
+    page_delay: 0.5
+    fs_wait_seconds: 8
+    fs_request_timeout: 90
+    max_retries: 5
+    user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    source_name: "dlpsgame.com"
+
+  superpsx:
+    base_url: "https://www.superpsx.com"
+    category_url: "/category/ps5/ps5-games/"
+    http_backend: "curl"  # No FlareSolverr needed
+    page_delay: 1.0
+    max_retries: 5
+    source_name: "superpsx.com"
+
+  exfat:
+    url: "https://pippo26442999.github.io/.exFAT/exFAT.json"
+    timeout: 25
+    retries: 4
+    source_name: "exFAT"
+
+flaresolverr:
+  default_url: "http://localhost:8191/v1"
+  urls_env_var: "FLARESOLVERR_URLS"  # comma-separated for multi-instance
+  pool_instances: 3  # number of Docker containers for parallel scraping
+  health_retries: 10
+  health_interval: 10
+
+enrichment:
+  rawg:
+    api_url: "https://api.rawg.io/api/games"
+    ttl_days_matched: 30      # games successfully matched: refresh every 30 days
+    ttl_days_unmatched: 14    # games not found in RAWG: retry every 14 days
+    ttl_days_new: 0           # new games: enrich immediately
+    max_calls_per_run: 900
+    delay_between_calls: 0.2
+
+mirror_patterns:
+  - [akirabox, Akia]
+  - [vikingfile, Viki]
+  - [datanodes.to, Data]
+  - [filekeeper, Filek]
+  - [datavaults, Vault]
+  - [buzzheavier, Buzz]
+  - [1fichier, 1File]
+  - [mediafire, Mediafire]
+  - [rootz.so, Rootz]
+  - [gofile, Gofile]
+  - [1cloudfile, 1Cloud]
+  - [mega.nz, Mega]
+
+scraping:
+  mode: "incremental"  # "full" or "incremental"
+  concurrency: 2
+  checkpoint_every: 50
+  incremental_max_age_days: 7
+  full_refresh_day: 1  # Monday = full refresh (1=Monday, 7=Sunday)
+
+caching:
+  enabled: true
+  directory: ".scrape_cache"
+  superpsx_directory: ".scrape_cache_superpsx"
+  manifest_file: ".scrape_manifest.json"
+  max_age_days: 7
+
+http:
+  request_timeout: 30
+  connect_timeout: 15
+  retry_backoff_base: 2.0
+  retry_max_wait: 120.0
+  keepalive_time: 60
+
+output:
+  catalog_file: "dlpsgame-ps5.json"
+  warnings_file: "dlpsgame-ps5.warnings.txt"
+  metrics_file: "scrape-metrics.json"
+  diff_file: "diff-report.json"
+  artifact_name: "dlpsgame-ps5-catalog"
