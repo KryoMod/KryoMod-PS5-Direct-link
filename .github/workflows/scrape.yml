@@ -101,8 +101,11 @@ jobs:
         with:
           path: |
             .scrape_cache
+            .scrape_cache_api
             .scrape_cache_superpsx
             .scrape_manifest.json
+            .scrape_manifest_api.json
+            .scrape_manifest_superpsx.json
           key: scrape-cache-${{ runner.os }}-${{ github.run_id }}
           restore-keys: |
             scrape-cache-${{ runner.os }}-
@@ -144,10 +147,12 @@ jobs:
           "
 
       # ──────────────────────────────────────────────────────────────
-      # SOURCE 1 : dlpsgame.com via API WordPress (rapide, pas de CF)
+      # SOURCE 1 : dlpsgame.com via API WordPress (avec fallback FlareSolverr)
       # ──────────────────────────────────────────────────────────────
       - name: Scrape dlpsgame via WP API
         continue-on-error: true
+        env:
+          FLARESOLVERR_URL: http://localhost:8191/v1
         run: |
           if [ "${{ github.event.inputs.skip_wp_api }}" = "true" ]; then
             echo "API WordPress ignorée (skip_wp_api=true)"
@@ -155,6 +160,7 @@ jobs:
           fi
           echo "=== Scraping via API WordPress ==="
           ARGS=("--out" "dlpsgame-ps5.fresh.json")
+          ARGS+=("--flaresolverr-url" "http://localhost:8191/v1")
           ARGS+=("--mode" "${{ steps.config.outputs.mode }}")
           if [ -n "${{ github.event.inputs.max_pages }}" ]; then
             ARGS+=("--max-pages" "${{ github.event.inputs.max_pages }}")
@@ -316,8 +322,14 @@ jobs:
           if [ -d .scrape_cache_superpsx ]; then
             echo "- Cache SuperPSX : $(du -sh .scrape_cache_superpsx | cut -f1)" >> $GITHUB_STEP_SUMMARY
           fi
-          if [ -f .scrape_manifest.json ]; then
-            echo "- Manifest : $(python3 -c 'import json; d=json.load(open(".scrape_manifest.json")); print(len(d.get("entries",{})))' 2>/dev/null || echo '?') entrées" >> $GITHUB_STEP_SUMMARY
+          if [ -d .scrape_cache_api ]; then
+            echo "- Cache API : $(du -sh .scrape_cache_api | cut -f1)" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f .scrape_manifest_api.json ]; then
+            echo "- Manifest API : $(python3 -c 'import json; d=json.load(open(".scrape_manifest_api.json")); print(len(d.get("entries",{})))' 2>/dev/null || echo '?') entrées" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f .scrape_manifest_superpsx.json ]; then
+            echo "- Manifest SuperPSX : $(python3 -c 'import json; d=json.load(open(".scrape_manifest_superpsx.json")); print(len(d.get("entries",{})))' 2>/dev/null || echo '?') entrées" >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: Show summary
