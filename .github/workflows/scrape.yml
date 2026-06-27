@@ -228,7 +228,7 @@ jobs:
           ARGS+=("--flaresolverr-url" "http://localhost:8191/v1")
           ARGS+=("--mode" "${{ steps.config.outputs.mode }}")
           # ITEM 8 : pré-résolution concurrente des redirections (le correctif du 3h30).
-          ARGS+=("--redirect-concurrency" "8")
+          ARGS+=("--redirect-concurrency" "32")
           if [ -n "${{ github.event.inputs.max_pages }}" ]; then
             ARGS+=("--max-pages" "${{ github.event.inputs.max_pages }}")
           fi
@@ -295,7 +295,7 @@ jobs:
           ARGS=("--out" "superpsx-ps5.fresh.json")
           ARGS+=("--mode" "${{ steps.config.outputs.mode }}")
           # ITEM 10 : parallélisme réel des fiches (curl pur, sans Cloudflare).
-          ARGS+=("--concurrency" "4")
+          ARGS+=("--concurrency" "8")
           if [ -n "${{ github.event.inputs.max_games }}" ]; then
             ARGS+=("--max-games" "${{ github.event.inputs.max_games }}")
           fi

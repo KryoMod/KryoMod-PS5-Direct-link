@@ -91,10 +91,13 @@ REDIRECT_RETRIES = 3
 
 # Concurrence de résolution des redirections (Item 8).
 # La cible (downloadgameps3.net) n'a PAS de Cloudflare : urllib pur, sûr à
-# paralléliser.  Bornée à [8, 12] workers pour rester courtois.
-REDIRECT_CONCURRENCY_DEFAULT = 8
-REDIRECT_CONCURRENCY_MIN = 8
-REDIRECT_CONCURRENCY_MAX = 12
+# paralléliser fortement. C'est le poste DOMINANT du run (~8200 liens) : un
+# plafond trop bas (ex. 12) le rend lent. On monte le plafond ; le backoff 429
+# + le jitter encaissent une éventuelle limitation côté hôte. Réglable via
+# --redirect-concurrency.
+REDIRECT_CONCURRENCY_DEFAULT = 24
+REDIRECT_CONCURRENCY_MIN = 4
+REDIRECT_CONCURRENCY_MAX = 64
 # Jitter (s) ajouté avant chaque requête concurrente pour lisser la charge.
 REDIRECT_JITTER_MIN = 0.1
 REDIRECT_JITTER_MAX = 0.3
