@@ -7,14 +7,21 @@ visits each game page to extract metadata from the info table, then visits each
 DLL page (/dll-*) to extract download links, firmware requirements, and format
 tags. Produces a JSON catalog in the SAME format as dlpsgame-ps5.json.
 
-HTML structure (SuperPSX-specific):
-  - Category page: articles in `article.item.hentry` → `h2.penci-entry-title a[href]`
-  - Game page: info table `table.has-fixed-layout` with key/value `<td>` pairs;
-    DLL page link found via `a[href*="/dll-"]`
-  - DLL page: `table.has-fixed-layout` data tables with ⇛ (U+21DB) row separators;
-    separator tables (no has-fixed-layout, single td with PPSA ID) mark new sections;
-    download links: `a[data-penci-link="external"][rel="nofollow"]`
-    Text-only hosts (FileK) appear as plain text between " – " separators
+superpsx.com est désormais derrière Cloudflare : un curl simple reçoit un
+HTTP 403 « Just a moment ». Le backend FlareSolverr (--http-backend
+flaresolverr) lance un vrai Chrome qui franchit le challenge ; c'est le mode
+à utiliser en CI / sur IP datacenter.
+
+HTML structure (SuperPSX-specific) :
+  - Category page : liens de jeux dans `.entry-title a` (slug NUMÉRIQUE, ex.
+    /26528-2626/) ; pagination /category/ps5/ps5-games/page/N/
+  - Game page : table d'infos (Game Name, Platform, Genre, Mode, Release Date,
+    Version) ; lien vers la page de téléchargement dont le slug commence par
+    "dll-" (ex. /dll-cvps5/)
+  - DLL page : table dont la ligne « Game (vXX.XXX) ⇛ MultiHost » pointe vers
+    un lien keepshield.org/safe/<id> (link-locker agrégeant les miroirs)
+  - keepshield : récupéré VIA FLARESOLVERR (JS rendu), expose les vrais
+    miroirs (vikingfile, 1fichier, mega, ...) — cf. resolve_keepshield()
 
 Usage:
     # Full scrape (all pages)
@@ -87,12 +94,74 @@ DISK_CACHE_ENABLED = True
 # curl binary path
 CURL_BIN = shutil.which("curl") or "curl"
 
-# HTTP backend: "curl" (default) or "flaresolverr" (placeholder)
+# HTTP backend: "curl" (default) or "flaresolverr"
+# superpsx.com est passé derrière Cloudflare (curl simple → 403 "Just a moment").
+# Le backend flaresolverr lance un vrai Chrome qui franchit le challenge.
 _HTTP_BACKEND: str = "curl"
 
-# FlareSolverr URL
+# URL du FlareSolverr (par défaut : localhost:8191)
 FLARESOLVERR_URL = "http://localhost:8191/v1"
+
+# Session FlareSolverr persistante (garde Chrome ouvert avec les cookies CF)
 _FS_SESSION_ID: str | None = None
+
+# Pool multi-instances FlareSolverr (round-robin sur N conteneurs Docker).
+# Renseigné par init_flaresolverr_session() quand FLARESOLVERR_URLS (CSV)
+# contient plusieurs URLs. Avec une seule URL, on garde la session unique.
+_FS_POOL = None  # type: "FlareSolverrPool | None"
+
+# Hôtes d'hébergeurs « légitimes » reconnus sur les pages keepshield (link-locker).
+# Tout ce qui n'est pas dans cette liste est considéré comme pub/junk et filtré.
+KEEPSHIELD_MIRROR_HOSTS = (
+    "vikingfile",
+    "1fichier",
+    "mega.nz",
+    "mega.co.nz",
+    "gofile",
+    "akirabox",
+    "pixeldrain",
+    "buzzheavier",
+    "datanodes",
+    "fileaxa",
+    "rapidgator",
+    "1cloudfile",
+    "mediafire",
+    "datavaults",
+    "filekeeper",
+)
+
+# Domaines pub/junk/analytics à exclure systématiquement des résolutions
+# keepshield (ils apparaissent dans le DOM rendu mais ne sont pas des miroirs).
+KEEPSHIELD_JUNK_HOSTS = (
+    "avouchlawsrethink.com",
+    "cdn.jsdelivr.net",
+    "jsdelivr.net",
+    "googletagmanager.com",
+    "google-analytics.com",
+    "analytics.google.com",
+    "schema.org",
+    "w3.org",
+    "gmpg.org",
+    "facebook.com",
+    "facebook.net",
+    "twitter.com",
+    "x.com",
+    "youtube.com",
+    "youtu.be",
+    "discord.gg",
+    "discord.com",
+    "t.me",
+    "telegram.org",
+    "keepshield.org",
+    "gstatic.com",
+    "googleapis.com",
+    "cloudflare.com",
+    "doubleclick.net",
+)
+
+# Cache des résolutions keepshield → liste de miroirs (évite de re-résoudre
+# le même /safe/<id> plusieurs fois dans un même run).
+_KEEPSHIELD_CACHE: dict[str, list[dict[str, str]]] = {}
 
 # ---------------------------------------------------------------------------
 # Mirror name mapping (consistent with dlpsgame scraper)
@@ -299,11 +368,159 @@ def _cache_set(url: str, html: str) -> None:
         log.debug("  cache write failed for %s: %s", url, exc)
 
 
+def _flaresolverr_post(payload: dict, *, timeout: int = 120) -> dict:
+    """Envoie une commande à FlareSolverr via POST /v1 et retourne le JSON.
+
+    Réutilise l'approche éprouvée de scrape_dlpsgame.py."""
+    import urllib.error
+    import urllib.request
+
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        FLARESOLVERR_URL,
+        data=data,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.URLError as exc:
+        raise RuntimeError(
+            f"FlareSolverr injoignable sur {FLARESOLVERR_URL}. "
+            f"Lancez-le : docker run -p 8191:8191 ghcr.io/flaresolverr/flaresolverr:latest. "
+            f"Détail : {exc}"
+        ) from exc
+
+
+def _flaresolverr_get(
+    url: str,
+    *,
+    max_time: int | None = None,
+    wait_seconds: int | None = None,
+) -> CurlResponse:
+    """GET via FlareSolverr (vrai Chrome → franchit le challenge Cloudflare).
+
+    Utilise le pool multi-instances si actif, sinon la session persistante
+    unique. Retourne un CurlResponse API-compatible (.status_code/.text/.url).
+
+    `wait_seconds` : délai (s) laissé au JS de la page APRÈS résolution du
+    challenge et AVANT capture du HTML (via `waitInSeconds`). Indispensable
+    pour les pages keepshield dont les miroirs sont injectés par JavaScript."""
+    timeout = max_time or FS_REQUEST_TIMEOUT
+
+    # Chemin pool multi-instances : délègue au round-robin si actif.
+    if _FS_POOL is not None:
+        return _FS_POOL.get(
+            url,
+            max_timeout=FS_MAX_TIMEOUT,
+            wait_seconds=wait_seconds,
+        )
+
+    payload: dict = {
+        "cmd": "request.get",
+        "url": url,
+        "maxTimeout": FS_MAX_TIMEOUT,
+    }
+    if _FS_SESSION_ID:
+        payload["session"] = _FS_SESSION_ID
+    if wait_seconds and wait_seconds > 0:
+        payload["waitInSeconds"] = wait_seconds
+
+    post_timeout = timeout + 30 + (wait_seconds or 0)
+    data = _flaresolverr_post(payload, timeout=post_timeout)
+
+    if data.get("status") != "ok":
+        raise RuntimeError(
+            f"FlareSolverr a échoué: {data.get('message', 'erreur inconnue')}"
+        )
+
+    solution = data.get("solution", {})
+    status = solution.get("status", 200)
+    html = solution.get("response", "")
+    final_url = solution.get("url", url)
+
+    # Si le HTML est encore une page de challenge Cloudflare, c'est un échec.
+    if html and ("Just a moment" in html[:500] or "challenge-platform" in html[:2000]):
+        raise RuntimeError(
+            f"FlareSolverr n'a pas réussi à résoudre le challenge Cloudflare pour {url}"
+        )
+
+    return CurlResponse(status_code=status, text=html, final_url=final_url)
+
+
+def init_flaresolverr_session() -> None:
+    """Crée une session FlareSolverr persistante (ou un pool multi-instances).
+
+    Avec FLARESOLVERR_URLS (CSV ≥ 2 URLs) : monte un pool round-robin.
+    Sinon : session unique persistante (Chrome reste ouvert avec les cookies
+    Cloudflare, évite de relancer le navigateur à chaque requête)."""
+    global _FS_SESSION_ID, _FS_POOL
+    if _HTTP_BACKEND != "flaresolverr":
+        return
+
+    # Détection multi-instances : FLARESOLVERR_URLS (CSV) prioritaire.
+    try:
+        from flaresolverr_pool import FlareSolverrPool, parse_flaresolverr_urls
+        fs_urls = parse_flaresolverr_urls()
+    except Exception as exc:
+        log.debug("  pool FlareSolverr indisponible (%s) — session unique", exc)
+        fs_urls = []
+
+    if len(fs_urls) > 1:
+        log.info("Création pool FlareSolverr multi-instances (%d URLs)...", len(fs_urls))
+        try:
+            _FS_POOL = FlareSolverrPool(fs_urls, verbose=False)
+            log.info("  ✓ Pool FlareSolverr prêt : %d instance(s) active(s)", _FS_POOL.size)
+            return
+        except Exception as exc:
+            log.warning("  ⚠ Échec init pool (%s) — repli sur session unique", exc)
+            _FS_POOL = None
+
+    session_id = f"superpsx-{int(time.time())}"
+    log.info("Création session FlareSolverr persistante...")
+    try:
+        data = _flaresolverr_post({"cmd": "sessions.create", "session": session_id})
+        if data.get("status") == "ok":
+            _FS_SESSION_ID = session_id
+            log.info("  ✓ Session FlareSolverr créée: %s", _FS_SESSION_ID)
+            # Pré-chauffage : résout le challenge Cloudflare et stocke les cookies.
+            log.info("  Pré-chargement de la page de catégorie...")
+            resp = _flaresolverr_get(PS5_CATEGORY_URL, max_time=60)
+            log.info("  ✓ Pré-chargement OK (HTTP %d, %d octets)",
+                     resp.status_code, len(resp.text))
+        else:
+            log.warning("  ⚠ Session non créée: %s — requêtes indépendantes",
+                        data.get("message"))
+    except Exception as exc:
+        log.warning("  ⚠ Impossible de créer la session: %s", exc)
+        log.warning("    Les requêtes seront indépendantes (plus lent)")
+
+
+def destroy_flaresolverr_session() -> None:
+    """Détruit la session FlareSolverr (ou le pool) à la fin du scrape."""
+    global _FS_SESSION_ID, _FS_POOL
+    if _FS_POOL is not None:
+        try:
+            _FS_POOL.destroy_all()
+        except Exception:
+            pass
+        _FS_POOL = None
+        return
+    if not _FS_SESSION_ID:
+        return
+    try:
+        _flaresolverr_post({"cmd": "sessions.destroy", "session": _FS_SESSION_ID})
+        log.info("  ✓ Session FlareSolverr détruite: %s", _FS_SESSION_ID)
+    except Exception:
+        pass
+    _FS_SESSION_ID = None
+
+
 def _fetch(url: str, *, follow_redirects: bool = True) -> CurlResponse:
     """Dispatch to the configured HTTP backend."""
     if _HTTP_BACKEND == "flaresolverr":
-        # Placeholder: FlareSolverr not yet implemented for SuperPSX
-        raise NotImplementedError("FlareSolverr backend not yet implemented for SuperPSX")
+        return _flaresolverr_get(url)
     else:
         return _curl_get(url, follow_redirects=follow_redirects)
 
@@ -437,12 +654,54 @@ def detect_group(label_text: str) -> str:
 # ---------------------------------------------------------------------------
 
 
+def _is_game_url(href: str) -> bool:
+    """True si `href` ressemble à une page de jeu SuperPSX exploitable.
+
+    Le nouveau site utilise des slugs quelconques (souvent NUMÉRIQUES, ex.
+    /26528-2626/) sans suffixe -ps5. On accepte tout slug interne SAUF :
+    /category/, /page/, /tag/, /spxguide/, slugs commençant par "dll-",
+    pages d'émulateurs/guides, et les liens hors superpsx.com."""
+    if not href.startswith(BASE_URL):
+        return False
+
+    host = get_hostname(href)
+    if host not in ("superpsx.com", "www.superpsx.com"):
+        return False
+
+    path = urlparse(href).path.strip("/")
+    if not path:
+        return False  # racine du site
+
+    # Exclusions de chemins non-jeux
+    lowered = path.lower()
+    excluded_prefixes = ("category/", "page/", "tag/", "spxguide/", "author/", "dll-")
+    if any(lowered.startswith(pref) for pref in excluded_prefixes):
+        return False
+    # Les pages de pagination/catégorie peuvent apparaître en sous-chemin
+    if "/page/" in f"/{lowered}/" or "/category/" in f"/{lowered}/":
+        return False
+    if "/dll-" in f"/{lowered}":
+        return False
+
+    # Un slug de jeu est un segment unique (pas de sous-répertoires multiples).
+    # Ex valide : "26528-2626" ; à rejeter : "category/ps5/ps5-games".
+    segments = [s for s in path.split("/") if s]
+    if len(segments) != 1:
+        return False
+
+    return True
+
+
 def discover_game_urls(max_pages: int | None) -> list[str]:
     """Crawl all category pages and collect game page URLs.
 
-    Category pages follow /category/ps5/ps5-games/page/N/ with ~20 games per
-    page. Games are in `article.item.hentry` → `h2.penci-entry-title a[href]`.
-    Pagination continues while `a.next.page-numbers[href]` exists."""
+    Pagination WordPress : /category/ps5/ps5-games/ (page 1), puis
+    /category/ps5/ps5-games/page/2/, ... jusqu'à ~/page/25/.
+    Les liens de jeux sont dans `.entry-title a` (sélecteur WordPress).
+    On accepte les slugs quelconques (ex. numériques /26528-2626/) mais on
+    exclut category/page/tag/spxguide/dll- (cf. _is_game_url).
+    La pagination s'arrête dès qu'une page ne renvoie AUCUN nouveau lien de
+    jeu (ou 404), et respecte max_pages."""
     game_urls: list[str] = []
     seen: set[str] = set()
 
@@ -469,61 +728,38 @@ def discover_game_urls(max_pages: int | None) -> list[str]:
 
         soup = BeautifulSoup(resp.text, "html.parser")
 
-        # Extract game links from article entries
+        # Sélecteur principal : `.entry-title a` (titres d'articles WordPress).
+        anchors = soup.select(".entry-title a[href]")
+
+        # Repli : si le thème n'expose pas .entry-title, on tente les sélecteurs
+        # historiques (penci) puis tous les <a> filtrés par _is_game_url.
+        if not anchors:
+            anchors = soup.select("h2.penci-entry-title a[href], article.item.hentry a[href]")
+        if not anchors:
+            anchors = soup.find_all("a", href=True)
+
         page_links: list[str] = []
-        for article in soup.select("article.item.hentry"):
-            link_tag = article.select_one("h2.penci-entry-title a[href]")
-            if link_tag:
-                href = link_tag["href"].strip()
-                # Only accept SuperPSX game pages (not dll- pages or category pages)
-                if (
-                    href.startswith(BASE_URL)
-                    and "/dll-" not in href
-                    and "/category/" not in href
-                    and "/page/" not in href
-                    and href not in seen
-                ):
-                    seen.add(href)
-                    page_links.append(href)
-                    game_urls.append(href)
-
-        # Fallback: also look for any a[href] that looks like a game page
-        # (in case the article selector misses some entries)
-        if not page_links:
-            for a in soup.find_all("a", href=True):
-                href = a["href"].strip()
-                if (
-                    href.startswith(BASE_URL)
-                    and "/dll-" not in href
-                    and "/category/" not in href
-                    and "/page/" not in href
-                    and "/ps5-games" not in href.replace("/category/ps5/ps5-games", "")
-                    and href != BASE_URL + "/"
-                    and href != BASE_URL
-                    and href.endswith("/")
-                    and href not in seen
-                    and re.match(r"^https://www\.superpsx\.com/[a-z0-9][\w\-]*\/?$", href)
-                ):
-                    seen.add(href)
-                    page_links.append(href)
-                    game_urls.append(href)
+        for a in anchors:
+            href = (a.get("href") or "").strip()
+            if not href:
+                continue
+            if not href.startswith("http"):
+                href = urljoin(url, href)
+            if _is_game_url(href) and href not in seen:
+                seen.add(href)
+                page_links.append(href)
+                game_urls.append(href)
 
         if not page_links:
-            log.info("  page %d: 0 game links found — end of pagination", page)
+            log.info("  page %d: 0 new game links found — end of pagination", page)
             break
 
         log.info("  page %d: %d games", page, len(page_links))
 
-        # Check for next page
-        next_link = soup.select_one("a.next.page-numbers[href]")
-        if not next_link:
-            log.info("  no 'next' link found — end of pagination")
-            break
-
         page += 1
         time.sleep(PAGE_DELAY)
 
-    log.info("Total: %d games discovered across %d pages", len(game_urls), page)
+    log.info("Total: %d games discovered across %d pages", len(game_urls), page - 1)
     return game_urls
 
 
@@ -571,26 +807,44 @@ def extract_poster_url(soup: BeautifulSoup, page_url: str) -> str | None:
 
 
 def parse_info_table(soup: BeautifulSoup) -> dict[str, str]:
-    """Parse the game info table (table.has-fixed-layout) on the game page.
+    """Parse the game info table on the game page.
 
-    Extracts key/value pairs from <td> cells. Keys include:
-    Game Name, Platform, Genre, Mode, Release Date, Size, Version, Update
-    """
+    Extrait les paires clé/valeur des cellules <td>. Clés attendues :
+    Game Name, Platform, Genre, Mode, Release Date, Size, Version, Update.
+
+    On cible d'abord `table.has-fixed-layout` (table WordPress) ; à défaut, on
+    balaie toutes les <table> et on retient la première qui ressemble à une
+    table d'infos clé/valeur (au moins une clé attendue reconnue)."""
     info: dict[str, str] = {}
 
-    # Find the first has-fixed-layout table on the game page
-    table = soup.select_one("table.has-fixed-layout")
-    if not table:
-        return info
+    expected_keys = {
+        "game name", "platform", "genre", "mode", "release date",
+        "size", "version", "update", "publisher", "developer",
+    }
 
-    rows = table.find_all("tr")
-    for row in rows:
-        cells = row.find_all("td")
-        if len(cells) >= 2:
-            key = cells[0].get_text(strip=True).rstrip(":")
-            value = cells[1].get_text(strip=True)
-            if key and value:
-                info[key] = value
+    def _parse_table(table: Tag) -> dict[str, str]:
+        out: dict[str, str] = {}
+        for row in table.find_all("tr"):
+            cells = row.find_all("td")
+            if len(cells) >= 2:
+                key = cells[0].get_text(strip=True).rstrip(":")
+                value = cells[1].get_text(strip=True)
+                if key and value:
+                    out[key] = value
+        return out
+
+    # 1) Table WordPress dédiée
+    table = soup.select_one("table.has-fixed-layout")
+    if table:
+        info = _parse_table(table)
+        if info:
+            return info
+
+    # 2) Repli : première <table> qui contient au moins une clé attendue
+    for table in soup.find_all("table"):
+        candidate = _parse_table(table)
+        if candidate and any(k.lower() in expected_keys for k in candidate):
+            return candidate
 
     return info
 
@@ -598,21 +852,40 @@ def parse_info_table(soup: BeautifulSoup) -> dict[str, str]:
 def find_dll_page_url(soup: BeautifulSoup, page_url: str) -> str | None:
     """Find the DLL page link on the game page.
 
-    Looks for links matching /dll-* pattern, either via href selector or regex.
-    """
-    # Method 1: Direct link search
+    Sur le nouveau site, la page de jeu (/26528-2626/) contient un lien vers
+    la page de téléchargement dont le SLUG commence par "dll-"
+    (ex. /dll-cvps5/). On le retourne en priorité. À défaut, on retombe sur
+    un lien/bouton dont le texte évoque "Download"."""
+    # Méthode 1 : lien dont le slug commence par "dll-"
     for a in soup.find_all("a", href=True):
         href = a["href"].strip()
-        if "/dll-" in href and "superpsx.com" in href:
-            if not href.startswith("http"):
-                href = urljoin(page_url, href)
+        if not href:
+            continue
+        if not href.startswith("http"):
+            href = urljoin(page_url, href)
+        if "superpsx.com" not in href:
+            continue
+        slug = urlparse(href).path.strip("/").split("/")[0].lower()
+        if slug.startswith("dll-") or "/dll-" in href:
             return href
 
-    # Method 2: Regex search in HTML source
+    # Méthode 2 : recherche regex dans le HTML source
     html_str = str(soup)
     m = DLL_LINK_RE.search(html_str)
     if m:
         return m.group(1)
+
+    # Méthode 3 (repli) : un lien/bouton dont le texte contient "Download"
+    for a in soup.find_all("a", href=True):
+        text = a.get_text(" ", strip=True).lower()
+        href = a["href"].strip()
+        if not href:
+            continue
+        if "download" in text:
+            if not href.startswith("http"):
+                href = urljoin(page_url, href)
+            if "superpsx.com" in href and _is_game_url(href):
+                return href
 
     return None
 
@@ -757,6 +1030,112 @@ def _detect_section_label(table: Tag) -> str | None:
         if PPSA_RE.search(text):
             return text
     return None
+
+
+# ---------------------------------------------------------------------------
+# Résolution keepshield (link-locker agrégateur de miroirs)
+# ---------------------------------------------------------------------------
+
+
+def is_keepshield_url(url: str) -> bool:
+    """True si l'URL est un lien keepshield.org/safe/<id> (link-locker)."""
+    host = get_hostname(url)
+    if host not in ("keepshield.org", "www.keepshield.org"):
+        return False
+    return "/safe/" in urlparse(url).path
+
+
+def _is_keepshield_mirror(url: str) -> bool:
+    """True si l'URL pointe vers un vrai hébergeur (et pas de la pub/junk).
+
+    On exige un hôte connu (KEEPSHIELD_MIRROR_HOSTS) ET on rejette tout hôte
+    listé comme junk/analytics (KEEPSHIELD_JUNK_HOSTS)."""
+    if not url or not url.startswith("http"):
+        return False
+    host = get_hostname(url)
+    if not host:
+        return False
+    # Filtre pub/junk
+    if any(junk in host for junk in KEEPSHIELD_JUNK_HOSTS):
+        return False
+    # Doit correspondre à un hébergeur connu
+    return any(m in host for m in KEEPSHIELD_MIRROR_HOSTS)
+
+
+def resolve_keepshield(url: str) -> list[dict[str, str]]:
+    """Résout un lien keepshield.org/safe/<id> en liste de miroirs réels.
+
+    Le keepshield est un « link-locker » : la page agrège plusieurs miroirs
+    (vikingfile, 1fichier, mega, etc.) qui ne sont injectés dans le DOM
+    qu'APRÈS exécution du JavaScript. On la récupère donc VIA FLARESOLVERR
+    (jamais en curl simple), avec un petit délai de rendu, puis on extrait les
+    hrefs des hébergeurs connus en filtrant la pub/junk.
+
+    Retourne une liste de dicts {"url": ..., "mirror": <nom court>} compatible
+    avec le format downloadLinks. Liste VIDE si la résolution échoue/est vide
+    (l'appelant retombe alors sur le lien keepshield brut)."""
+    # Cache mémoire : évite de re-résoudre le même /safe/<id>.
+    if url in _KEEPSHIELD_CACHE:
+        return _KEEPSHIELD_CACHE[url]
+
+    # Cache disque (HTML rendu), réutilise l'infra existante.
+    html = _cache_get(url)
+    if not html:
+        try:
+            # keepshield nécessite le JS rendu → FlareSolverr obligatoire.
+            # On laisse un délai de rendu pour que les miroirs soient injectés.
+            resp = _flaresolverr_get(
+                url,
+                max_time=FS_REQUEST_TIMEOUT,
+                wait_seconds=FS_WAIT_SECONDS,
+            )
+        except Exception as exc:
+            log.warning("    keepshield: résolution échouée pour %s — %s", url, exc)
+            _KEEPSHIELD_CACHE[url] = []
+            return []
+        if resp.status_code != 200:
+            log.warning("    keepshield: HTTP %d pour %s", resp.status_code, url)
+            _KEEPSHIELD_CACHE[url] = []
+            return []
+        html = resp.text
+        _cache_set(url, html)
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    seen: set[str] = set()
+    mirrors: list[dict[str, str]] = []
+
+    # 1) Liens <a href> vers des hébergeurs connus.
+    candidates: list[str] = [a["href"].strip() for a in soup.find_all("a", href=True)]
+
+    # 2) Repli : certaines pages stockent l'URL dans des attributs data-* ou
+    #    en clair dans le texte/scripts. On balaie aussi le HTML brut à la
+    #    recherche d'URLs d'hébergeurs connus.
+    for host in KEEPSHIELD_MIRROR_HOSTS:
+        for m in re.finditer(
+            r'https?://[^\s"\'<>]*' + re.escape(host) + r'[^\s"\'<>]*', html, re.I
+        ):
+            candidates.append(m.group(0))
+
+    for href in candidates:
+        if not href or not href.startswith("http"):
+            continue
+        if not _is_keepshield_mirror(href):
+            continue
+        # Déduplication
+        if href in seen:
+            continue
+        seen.add(href)
+        mirror_name = extract_mirror_name(href)
+        mirrors.append({"url": href, "mirror": mirror_name})
+
+    if mirrors:
+        log.info("    keepshield résolu : %d miroir(s) pour %s", len(mirrors), url)
+    else:
+        log.debug("    keepshield : 0 miroir extrait pour %s", url)
+
+    _KEEPSHIELD_CACHE[url] = mirrors
+    return mirrors
 
 
 def parse_dll_page(url: str) -> dict | None:
@@ -1177,6 +1556,28 @@ def scrape_game(game_url: str) -> dict | None:
         if not url:
             log.debug("    skip text-only host: %s", name)
             continue
+
+        # Lien keepshield (link-locker) : on tente de le résoudre en vrais
+        # miroirs (vikingfile, 1fichier, ...) via FlareSolverr. En cas d'échec
+        # ou de résolution vide, on conserve le lien keepshield brut (mieux que
+        # rien). On préserve le préfixe de groupe (Backport/DLC/...) du nom.
+        if is_keepshield_url(url):
+            group_prefix = ""
+            if " - " in name:
+                group_prefix = name.rsplit(" - ", 1)[0] + " - "
+            resolved = resolve_keepshield(url)
+            if resolved:
+                for mirror in resolved:
+                    m_url = mirror.get("url", "")
+                    if not m_url or m_url in seen_urls:
+                        continue
+                    seen_urls.add(m_url)
+                    m_name = f"{group_prefix}{mirror.get('mirror', 'Mirror')}"
+                    download_links.append({"name": m_name, "url": m_url})
+                continue
+            # Résolution vide → on retombe sur le lien keepshield brut.
+            log.debug("    keepshield non résolu, conservation du lien brut: %s", url)
+
         # Skip non-host URLs
         if is_non_host_url(url):
             log.debug("    skip non-host: %s — %s", name, url)
@@ -1358,8 +1759,8 @@ Examples:
   # Verbose mode with single-threaded scraping
   python scrape_superpsx.py --verbose --concurrency 1
 
-  # With FlareSolverr backend (placeholder)
-  python scrape_superpsx.py --http-backend flaresolverr
+  # With FlareSolverr backend (REQUIS : superpsx.com est derrière Cloudflare)
+  python scrape_superpsx.py --http-backend flaresolverr --flaresolverr-url http://localhost:8191/v1
 """,
     )
     parser.add_argument(
@@ -1386,11 +1787,13 @@ Examples:
     parser.add_argument(
         "--http-backend", choices=["curl", "flaresolverr"],
         default="curl",
-        help="HTTP backend: 'curl' (default) or 'flaresolverr' (placeholder)",
+        help="HTTP backend: 'curl' (local, IP non bloquée) ou 'flaresolverr' "
+             "(proxy Docker, REQUIS car superpsx.com est derrière Cloudflare).",
     )
     parser.add_argument(
         "--flaresolverr-url", default=None,
-        help="FlareSolverr URL (default: http://localhost:8191/v1)",
+        help="FlareSolverr URL (défaut: http://localhost:8191/v1). Pour un pool "
+             "multi-instances, définir plutôt FLARESOLVERR_URLS (CSV) en env.",
     )
     parser.add_argument(
         "--no-cache", action="store_true",
@@ -1419,9 +1822,25 @@ Examples:
     if args.flaresolverr_url:
         FLARESOLVERR_URL = args.flaresolverr_url
 
+    # En mode FlareSolverr, on crée d'abord la session (ou le pool multi-instances)
+    # pour réutiliser la/les instance(s) Chrome (beaucoup plus rapide).
+    if _HTTP_BACKEND == "flaresolverr":
+        init_flaresolverr_session()
+
+    # FlareSolverr est mono-session par instance : une seule session ne supporte
+    # pas le parallélisme. On force concurrency=1 SAUF si un pool multi-instances
+    # est actif : dans ce cas, on autorise min(concurrency demandée, taille pool).
     if _HTTP_BACKEND == "flaresolverr" and args.concurrency > 1:
-        log.warning("FlareSolverr does not support concurrency — forcing concurrency=1")
-        args.concurrency = 1
+        if _FS_POOL is not None and _FS_POOL.size > 1:
+            new_conc = min(args.concurrency, _FS_POOL.size)
+            if new_conc != args.concurrency:
+                log.warning("Pool FlareSolverr de %d instance(s) — concurrency ramené à %d",
+                            _FS_POOL.size, new_conc)
+            args.concurrency = new_conc
+        else:
+            log.warning("FlareSolverr (session unique) ne supporte pas le parallélisme "
+                        "— concurrency forcé à 1")
+            args.concurrency = 1
 
     log.info(
         "Starting SuperPSX scraper (backend: %s, concurrency: %d, delay: %.1fs, mode: %s)",
@@ -1454,6 +1873,10 @@ Examples:
     except Exception as exc:
         log.error("Fatal error: %s", exc)
         return 1
+    finally:
+        # Nettoyage : détruire la session/pool FlareSolverr en fin de scrape.
+        if _HTTP_BACKEND == "flaresolverr":
+            destroy_flaresolverr_session()
 
     # Save manifest with scraped packages
     if manifest:

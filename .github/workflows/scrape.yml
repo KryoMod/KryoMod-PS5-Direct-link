@@ -283,19 +283,27 @@ jobs:
           python scripts/scrape_dlpsgame.py "${ARGS[@]}"
 
       # ──────────────────────────────────────────────────────────────
-      # SOURCE 2 : superpsx.com (pas de CF, scraping direct)
+      # SOURCE 2 : superpsx.com (DERRIÈRE Cloudflare → FlareSolverr requis)
       # ──────────────────────────────────────────────────────────────
       - name: Scrape SuperPSX
         continue-on-error: true
         # Source indépendante : tourne même si le chemin dlpsgame a échoué (!cancelled).
         if: ${{ !cancelled() && github.event.inputs.skip_superpsx != 'true' }}
-        timeout-minutes: 60
+        timeout-minutes: 90
+        env:
+          FLARESOLVERR_URL: http://localhost:8191/v1
         run: |
-          echo "=== Scraping SuperPSX ==="
+          echo "=== Scraping SuperPSX (FlareSolverr) ==="
+          # superpsx.com est passé derrière Cloudflare (403 en curl direct) → FlareSolverr.
+          # Les liens de DL sont des "link-lockers" keepshield.org, résolus en vrais
+          # miroirs (vikingfile/1fichier…) via FlareSolverr (JS rendu).
+          # FLARESOLVERR_URLS (pool 3 instances) est exporté plus haut → la concurrence
+          # est automatiquement plafonnée à la taille du pool.
           ARGS=("--out" "superpsx-ps5.fresh.json")
           ARGS+=("--mode" "${{ steps.config.outputs.mode }}")
-          # ITEM 10 : parallélisme réel des fiches (curl pur, sans Cloudflare).
-          ARGS+=("--concurrency" "8")
+          ARGS+=("--http-backend" "flaresolverr")
+          ARGS+=("--flaresolverr-url" "http://localhost:8191/v1")
+          ARGS+=("--concurrency" "3")
           if [ -n "${{ github.event.inputs.max_games }}" ]; then
             ARGS+=("--max-games" "${{ github.event.inputs.max_games }}")
           fi

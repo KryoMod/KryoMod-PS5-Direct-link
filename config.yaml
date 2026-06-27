@@ -19,7 +19,7 @@ sources:
   superpsx:
     base_url: "https://www.superpsx.com"
     category_url: "/category/ps5/ps5-games/"
-    http_backend: "curl"  # No FlareSolverr needed
+    http_backend: "flaresolverr"  # superpsx.com est passe derriere Cloudflare (403 en curl)
     page_delay: 1.0
     max_retries: 5
     source_name: "superpsx.com"
