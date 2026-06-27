@@ -1,0 +1,401 @@
+name: Scrape dlpsgame PS5 catalog
+
+on:
+  schedule:
+    # Tous les jours à 04:00 UTC (06:00 Paris en été / 05:00 en hiver)
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+    inputs:
+      max_pages:
+        description: "Nombre max de pages de catégorie à parcourir (vide = tout)"
+        required: false
+        default: ""
+      max_games:
+        description: "Nombre max de jeux à scraper (vide = tout)"
+        required: false
+        default: ""
+      no_cache:
+        description: "Désactiver le cache disque (force le re-scrap complet)"
+        type: boolean
+        required: false
+        default: false
+      scrape_mode:
+        description: "Mode de scraping (full = tout, incremental = seulement les nouveaux/modifiés)"
+        type: choice
+        options:
+          - incremental
+          - full
+        required: false
+        default: incremental
+      skip_superpsx:
+        description: "Ignorer la source SuperPSX"
+        type: boolean
+        required: false
+        default: false
+      skip_wp_api:
+        description: "Ignorer l'API WordPress (forcer le scraper HTML)"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scrape-dlpsgame
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1200
+
+    services:
+      # FlareSolverr résout les challenges Cloudflare via un vrai Chrome
+      # non-headless. Les IP datacenter de GitHub Actions sont bloquées
+      # par Cloudflare (403), donc on a besoin de ce proxy.
+      flaresolverr:
+        image: ghcr.io/flaresolverr/flaresolverr:latest
+        ports:
+          - 8191:8191
+        env:
+          LOG_LEVEL: info
+        options: >-
+          --health-cmd "curl -fs http://localhost:8191/health | grep -q ok"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Determine scrape mode
+        id: config
+        run: |
+          # Mode : incremental par défaut, full le lundi ou si demandé
+          MODE="${{ github.event.inputs.scrape_mode || 'incremental' }}"
+          if [ "$(date +%u)" = "1" ] && [ "$MODE" = "incremental" ]; then
+            echo "  Lundi détecté → mode full forcé"
+            MODE="full"
+          fi
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "  Mode de scraping : $MODE"
+
+      - name: Restore scrape cache + manifest
+        uses: actions/cache@v4
+        with:
+          path: |
+            .scrape_cache
+            .scrape_cache_superpsx
+            .scrape_manifest.json
+          key: scrape-cache-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            scrape-cache-${{ runner.os }}-
+
+      - name: Wait for FlareSolverr
+        run: |
+          echo "Attente du démarrage de FlareSolverr..."
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8191/health > /dev/null 2>&1; then
+              echo "FlareSolverr est prêt !"
+              curl -s http://localhost:8191/health
+              exit 0
+            fi
+            echo "  tentative $i/60 — FlareSolverr pas encore prêt..."
+            sleep 5
+          done
+          echo "ERREUR: FlareSolverr n'a pas démarré à temps"
+          exit 1
+
+      - name: Test FlareSolverr with dlpsgame.com
+        run: |
+          echo "Test de résolution Cloudflare sur dlpsgame.com..."
+          RESPONSE=$(curl -s -X POST http://localhost:8191/v1 \
+            -H "Content-Type: application/json" \
+            -d '{"cmd":"request.get","url":"https://dlpsgame.com/category/ps5/","maxTimeout":60000}')
+          echo "$RESPONSE" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          print(f\"  FlareSolverr status: {data.get('status')}\")
+          sol = data.get('solution', {})
+          print(f\"  HTTP status: {sol.get('status')}\")
+          html = sol.get('response', '')
+          print(f\"  HTML length: {len(html)}\")
+          if 'Just a moment' in html[:500]:
+            print('  ⚠ Challenge Cloudflare NON résolu')
+            sys.exit(1)
+          else:
+            print('  ✓ Challenge Cloudflare résolu')
+          "
+
+      # ──────────────────────────────────────────────────────────────
+      # SOURCE 1 : dlpsgame.com via API WordPress (rapide, pas de CF)
+      # ──────────────────────────────────────────────────────────────
+      - name: Scrape dlpsgame via WP API
+        continue-on-error: true
+        run: |
+          if [ "${{ github.event.inputs.skip_wp_api }}" = "true" ]; then
+            echo "API WordPress ignorée (skip_wp_api=true)"
+            exit 0
+          fi
+          echo "=== Scraping via API WordPress ==="
+          ARGS=("--out" "dlpsgame-ps5.fresh.json")
+          ARGS+=("--mode" "${{ steps.config.outputs.mode }}")
+          if [ -n "${{ github.event.inputs.max_pages }}" ]; then
+            ARGS+=("--max-pages" "${{ github.event.inputs.max_pages }}")
+          fi
+          if [ -n "${{ github.event.inputs.max_games }}" ]; then
+            ARGS+=("--max-games" "${{ github.event.inputs.max_games }}")
+          fi
+          if [ "${{ github.event.inputs.no_cache }}" = "true" ]; then
+            ARGS+=("--no-cache")
+          fi
+          ARGS+=("--verbose")
+          python scripts/scrape_wp_api.py "${ARGS[@]}"
+
+      # ──────────────────────────────────────────────────────────────
+      # SOURCE 1b : dlpsgame.com via scraper HTML (fallback si API échoue)
+      # ──────────────────────────────────────────────────────────────
+      - name: Scrape dlpsgame via HTML (fallback)
+        if: failure()
+        run: |
+          echo "=== API échouée — fallback vers scraper HTML ==="
+          ARGS=("--http-backend" "flaresolverr")
+          ARGS+=("--flaresolverr-url" "http://localhost:8191/v1")
+          ARGS+=("--concurrency" "1")
+          ARGS+=("--mode" "${{ steps.config.outputs.mode }}")
+          ARGS+=("--checkpoint-every" "50")
+          if [ -n "${{ github.event.inputs.max_pages }}" ]; then
+            ARGS+=("--max-pages" "${{ github.event.inputs.max_pages }}")
+          fi
+          if [ -n "${{ github.event.inputs.max_games }}" ]; then
+            ARGS+=("--max-games" "${{ github.event.inputs.max_games }}")
+          fi
+          if [ "${{ github.event.inputs.no_cache }}" = "true" ]; then
+            ARGS+=("--no-cache")
+          fi
+          ARGS+=("--out" "dlpsgame-ps5.fresh.json")
+          ARGS+=("--verbose")
+          python scripts/scrape_dlpsgame.py "${ARGS[@]}"
+
+      # ──────────────────────────────────────────────────────────────
+      # SOURCE 2 : superpsx.com (pas de CF, scraping direct)
+      # ──────────────────────────────────────────────────────────────
+      - name: Scrape SuperPSX
+        continue-on-error: true
+        if: github.event.inputs.skip_superpsx != 'true'
+        run: |
+          echo "=== Scraping SuperPSX ==="
+          ARGS=("--out" "superpsx-ps5.fresh.json")
+          ARGS+=("--mode" "${{ steps.config.outputs.mode }}")
+          if [ -n "${{ github.event.inputs.max_games }}" ]; then
+            ARGS+=("--max-games" "${{ github.event.inputs.max_games }}")
+          fi
+          ARGS+=("--verbose")
+          python scripts/scrape_superpsx.py "${ARGS[@]}"
+
+      # ──────────────────────────────────────────────────────────────
+      # SOURCE 3 : exFAT JSON distant (non-bloquant)
+      # ──────────────────────────────────────────────────────────────
+      - name: Import exFAT source
+        continue-on-error: true
+        run: |
+          # Source secondaire (non-bloquante). Si elle échoue, on continue avec
+          # uniquement dlpsgame ; l'étape de fusion gère l'absence du fichier.
+          python scripts/import_exfat.py --out exfat-ps5.fresh.json --verbose
+
+      # ──────────────────────────────────────────────────────────────
+      # FUSION INCRÉMENTALE
+      # ──────────────────────────────────────────────────────────────
+      - name: Merge fresh sources into existing catalog (incremental)
+        run: |
+          OUT=dlpsgame-ps5.json
+          FRESHES=()
+
+          # On collecte les sources fraîches RÉELLEMENT produites et non vides.
+          for f in dlpsgame-ps5.fresh.json exfat-ps5.fresh.json superpsx-ps5.fresh.json; do
+            if [ -f "$f" ]; then
+              N=$(python3 -c "import json; print(len(json.load(open('$f')).get('packages',[])))" 2>/dev/null || echo 0)
+              echo "  $f : $N jeux"
+              if [ "$N" -gt 0 ]; then FRESHES+=("$f"); fi
+            fi
+          done
+
+          # SÉCURITÉ : si AUCUNE source n'a produit de jeu, le catalogue existant
+          # est conservé intact (jamais écrasé par un cycle où tout a échoué).
+          if [ ${#FRESHES[@]} -eq 0 ]; then
+            echo "::warning::Aucune source fraîche exploitable — catalogue existant conservé intact."
+            rm -f dlpsgame-ps5.fresh.json exfat-ps5.fresh.json superpsx-ps5.fresh.json
+            echo "MERGE_SKIPPED=1" >> "$GITHUB_ENV"
+            exit 0
+          fi
+
+          # Sauvegarder le catalogue existant pour le diff
+          if [ -f "$OUT" ]; then
+            cp "$OUT" dlpsgame-ps5.previous.json
+            # Fusion incrémentale : sources fraîches d'abord (métadonnées à jour),
+            # catalogue existant ensuite (préserve jeux disparus, miroirs accumulés,
+            # et tout l'enrichissement RAWG via _enrichedAt / metadata).
+            echo "Fusion incrémentale dans $OUT (sources : ${FRESHES[*]}, existant)…"
+            python3 scripts/merge_catalogs.py dlpsgame-ps5.merged.json "${FRESHES[@]}" "$OUT"
+            mv dlpsgame-ps5.merged.json "$OUT"
+          else
+            echo "Premier run : initialisation du catalogue depuis les sources fraîches."
+            python3 scripts/merge_catalogs.py "$OUT" "${FRESHES[@]}"
+          fi
+
+          rm -f dlpsgame-ps5.fresh.json exfat-ps5.fresh.json superpsx-ps5.fresh.json
+
+          # On aligne le nom du fichier de warnings sur le catalogue canonique.
+          if [ -f dlpsgame-ps5.fresh.warnings.txt ]; then
+            mv -f dlpsgame-ps5.fresh.warnings.txt dlpsgame-ps5.warnings.txt
+          fi
+
+      # ──────────────────────────────────────────────────────────────
+      # ENRICHISSEMENT RAWG (TTL dynamique)
+      # ──────────────────────────────────────────────────────────────
+      - name: Enrich metadata (RAWG, dynamic TTL)
+        if: env.MERGE_SKIPPED != '1'
+        env:
+          RAWG_API_KEY: ${{ secrets.RAWG_API_KEY }}
+        run: |
+          # Enrichissement avec TTL dynamique :
+          # - Nouveaux jeux : enrichis immédiatement
+          # - Matchés RAWG : rafraîchis tous les 30 jours
+          # - Non matchés : réessayés tous les 14 jours
+          # Sans secret RAWG_API_KEY, le script ne fait rien.
+          if [ -f dlpsgame-ps5.json ]; then
+            python3 scripts/enrich_rawg.py dlpsgame-ps5.json --ttl-days 3 --max-calls 900
+          fi
+
+      # ──────────────────────────────────────────────────────────────
+      # MÉTRIQUES ET DIFF
+      # ──────────────────────────────────────────────────────────────
+      - name: Generate metrics and diff
+        if: always()
+        run: |
+          if [ -f dlpsgame-ps5.json ]; then
+            python3 scripts/scrape_metrics.py metrics dlpsgame-ps5.json --out scrape-metrics.json 2>/dev/null || true
+          fi
+          if [ -f dlpsgame-ps5.previous.json ] && [ -f dlpsgame-ps5.json ]; then
+            python3 scripts/scrape_metrics.py diff dlpsgame-ps5.previous.json dlpsgame-ps5.json --out diff-report.json 2>/dev/null || true
+            rm -f dlpsgame-ps5.previous.json
+          fi
+
+      - name: Health check
+        if: always()
+        run: |
+          if [ -f dlpsgame-ps5.json ]; then
+            python3 scripts/scrape_metrics.py health dlpsgame-ps5.json --min-games 500 2>/dev/null || true
+          fi
+
+      - name: Show cache stats
+        if: always()
+        run: |
+          if [ -d .scrape_cache ]; then
+            echo "### Cache disque" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- Fichiers en cache : $(ls .scrape_cache | wc -l)" >> $GITHUB_STEP_SUMMARY
+            echo "- Taille : $(du -sh .scrape_cache | cut -f1)" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -d .scrape_cache_superpsx ]; then
+            echo "- Cache SuperPSX : $(du -sh .scrape_cache_superpsx | cut -f1)" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f .scrape_manifest.json ]; then
+            echo "- Manifest : $(python3 -c 'import json; d=json.load(open(".scrape_manifest.json")); print(len(d.get("entries",{})))' 2>/dev/null || echo '?') entrées" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Show summary
+        if: always()
+        run: |
+          echo "### Catalogue généré" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f dlpsgame-ps5.json ]; then
+            GAMES=$(python3 -c 'import json; print(len(json.load(open("dlpsgame-ps5.json"))["packages"]))' 2>/dev/null || echo "0")
+            SIZE=$(du -h dlpsgame-ps5.json | cut -f1)
+            echo "- Fichier : \`dlpsgame-ps5.json\` ($SIZE)" >> $GITHUB_STEP_SUMMARY
+            echo "- Nombre de jeux : **$GAMES**" >> $GITHUB_STEP_SUMMARY
+            if [ "$GAMES" = "0" ]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "⚠ **Aucun jeu scrapé** — vérifiez les logs du scraper." >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "- ⚠ Aucun fichier JSON généré" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f dlpsgame-ps5.warnings.txt ]; then
+            WARNINGS=$(wc -l < dlpsgame-ps5.warnings.txt)
+            echo "- Pages en échec : $WARNINGS" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f scrape-metrics.json ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Métriques" >> $GITHUB_STEP_SUMMARY
+            python3 -c "
+          import json
+          m = json.load(open('scrape-metrics.json'))
+          print(f\"- Jeux avec taille : {m.get('games_with_size', '?')}/{m.get('total_games', '?')}\")
+          print(f\"- Jeux avec poster : {m.get('games_with_poster', '?')}\")
+          print(f\"- Liens moyens/jeu : {m.get('avg_links_per_game', '?')}\")
+          " 2>/dev/null || true
+          fi
+          if [ -f diff-report.json ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Diff" >> $GITHUB_STEP_SUMMARY
+            python3 -c "
+          import json
+          d = json.load(open('diff-report.json'))
+          print(f\"- Ajoutés : {d.get('added', 0)} | Supprimés : {d.get('removed', 0)} | Modifiés : {d.get('updated', 0)}\")
+          " 2>/dev/null || true
+          fi
+
+      - name: Commit & push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          echo "--- Fichiers présents ---"
+          ls -la dlpsgame-ps5.json dlpsgame-ps5.warnings.txt scrape-metrics.json 2>&1 || true
+          echo "--- git status (avant add) ---"
+          git status --short
+
+          git add -f dlpsgame-ps5.json
+          [ -f dlpsgame-ps5.warnings.txt ] && git add -f dlpsgame-ps5.warnings.txt || true
+          [ -f scrape-metrics.json ] && git add -f scrape-metrics.json || true
+
+          echo "--- git status (apres add) ---"
+          git status --short
+
+          if git diff --cached --quiet; then
+            echo "Aucun changement a committer."
+          else
+            DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
+            git commit -m "chore(scrape): mise a jour catalogue PS5 ($DATE)"
+            git push
+          fi
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dlpsgame-ps5-catalog
+          path: |
+            dlpsgame-ps5.json
+            dlpsgame-ps5.warnings.txt
+            scrape-metrics.json
+            diff-report.json
+          if-no-files-found: ignore
+          retention-days: 14
