@@ -250,10 +250,14 @@ jobs:
       # SOURCE 1b : dlpsgame.com via scraper HTML (fallback si API échoue)
       # ──────────────────────────────────────────────────────────────
       - name: Scrape dlpsgame via HTML (fallback)
-        # ITEM 1 : fallback déclenché si l'API a échoué OU n'a produit aucun jeu
-        # (0), ou si l'opérateur force le HTML via skip_wp_api=true. L'ancien
-        # 'if: failure()' était mort (jamais vrai après le continue-on-error).
-        if: ${{ steps.wp_api.outcome == 'failure' || steps.wp_api.outputs.games == '0' || github.event.inputs.skip_wp_api == 'true' }}
+        # ITEM 1 : fallback déclenché si l'API a vraiment ÉCHOUÉ, ou si elle n'a
+        # produit aucun jeu EN MODE FULL (en incrémental, 0 jeu modifié est NORMAL,
+        # pas un échec → on ne relance pas un scrape HTML complet pour rien), ou si
+        # l'opérateur force le HTML via skip_wp_api=true.
+        # continue-on-error : un échec du fallback ne doit PAS tuer les autres
+        # sources (SuperPSX/exFAT) ni le merge ; le garde-fou merge protège les données.
+        if: ${{ steps.wp_api.outcome == 'failure' || (steps.wp_api.outputs.games == '0' && steps.config.outputs.mode == 'full') || github.event.inputs.skip_wp_api == 'true' }}
+        continue-on-error: true
         timeout-minutes: 150
         env:
           FLARESOLVERR_URL: http://localhost:8191/v1
@@ -283,7 +287,8 @@ jobs:
       # ──────────────────────────────────────────────────────────────
       - name: Scrape SuperPSX
         continue-on-error: true
-        if: github.event.inputs.skip_superpsx != 'true'
+        # Source indépendante : tourne même si le chemin dlpsgame a échoué (!cancelled).
+        if: ${{ !cancelled() && github.event.inputs.skip_superpsx != 'true' }}
         timeout-minutes: 60
         run: |
           echo "=== Scraping SuperPSX ==="
@@ -302,6 +307,8 @@ jobs:
       # ──────────────────────────────────────────────────────────────
       - name: Import exFAT source
         continue-on-error: true
+        # Source indépendante : tourne même si un chemin précédent a échoué.
+        if: ${{ !cancelled() }}
         run: |
           # Source secondaire (non-bloquante). Si elle échoue, on continue avec
           # uniquement dlpsgame ; l'étape de fusion gère l'absence du fichier.
@@ -311,6 +318,9 @@ jobs:
       # FUSION INCRÉMENTALE
       # ──────────────────────────────────────────────────────────────
       - name: Merge fresh sources into existing catalog (incremental)
+        # Tourne même si le chemin dlpsgame a échoué : SuperPSX/exFAT peuvent avoir
+        # produit des données ; le garde-fou merge conserve l'existant si tout est vide.
+        if: ${{ !cancelled() }}
         run: |
           OUT=dlpsgame-ps5.json
           FRESHES=()

@@ -1329,7 +1329,8 @@ def scrape_all(
             from scrape_manifest import ScrapeManifest
             manifest = ScrapeManifest()
             urls_to_scrape = manifest.filter_urls(game_urls, "incremental")
-            new_urls = [u for u in game_urls if u not in manifest._entries]
+            known_urls = manifest._data.get("entries", {})
+            new_urls = [u for u in game_urls if u not in known_urls]
             log.info("Mode incrémental : %d total, %d à scraper, %d nouveaux",
                      len(game_urls), len(urls_to_scrape), len(new_urls))
         except ImportError:
