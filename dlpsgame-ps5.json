@@ -894,7 +894,7 @@
           "Simulation"
         ]
       },
-      "_sizeProbedAt": "2026-06-28T05:32:23.543165+00:00",
+      "_sizeProbedAt": "2026-06-29T08:56:29.519281+00:00",
       "formatLabel": "PKG"
     },
     {
@@ -1498,12 +1498,32 @@
     },
     {
       "titleId": "PPSA02572",
-      "title": "Alan Wake 2",
+      "title": "Alan Wake 2 Deluxe Edition",
       "version": "01.200.007",
       "category": "game",
-      "posterUrl": "https://dlpsgame.com/wp-content/uploads/2026/06/7-68.jpg",
-      "description": "Format: Backport 7.xx\nTags: PPSA02572, v1.200.007, 7.xx, 9.xx",
+      "posterUrl": "https://pub-ce6b40c14d144a128552570bcf6bb628.r2.dev/exFAT/Alan_Wake_2_Deluxe_Edition.avif",
+      "description": "Format: exFAT · Backport 7.xx\nTags: PPSA02572, v1.200.007, 7.xx, 9.xx",
       "downloadLinks": [
+        {
+          "name": "akia_url",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiRFJKRWhqaUVVcnBhdVlPZmtaK2I5WWpINFhic2t1N0NoNTlzaDM2YXlTVHVGNWdzaEQyVWM1Zm9NT1VFT2hqM0JuQXpQd25zMHZtbk83VENyQVR4QSsrYVhHSHdiK1lsUXQ0PSIsImkiOiJac3N3UXhHTlJ0MFExRWdkIiwibiI6IkFraWEifQ=="
+        },
+        {
+          "name": "viki_url",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiMlp1cGJ2Qmw1d1YvWFZjYlBDWFdldXhGZ1hJeUtFNTNSK1pwWE01THFQV0RpY0xDelprYXpwVHMxU2NPNkpacnYyTkRxQXpzblNjN2JncXNKZ2hRUkMwQ2ljWXZIZjg9IiwiaSI6IldMS1Mzano3UHNMeGJZV0EiLCJuIjoiVmlraSJ9"
+        },
+        {
+          "name": "data_url",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiQy9tYnVyY044YVBBbms3UTBWdFMrUkkvTnRiemh3NDg1VFdtbkFnL0U2S0plQmZtTnVEWng5QjhvRmwzSnVFYnNDaUN2K0FkNm15T1ZMSFRXZ1BwTzQ1RFA1MEUiLCJpIjoidU5IcmloWlpvRlMyZmt1bCIsIm4iOiJEYXRhIn0="
+        },
+        {
+          "name": "filek_url",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiYktTMko3ejNqT1l6YjdTWWVjVUpTYy9Ld1RBODV0clVWNEZncGtubVgvdE1hS1BDdGZ6eHg2Wk5SaHdCZ0tTU3pQcXkrMVhkM3RTOTRubGNkb0RmNENlRS9VOFpOWXM9IiwiaSI6IlVtWGN1b2FzY1VMaStIRFAiLCJuIjoiRmlsZUsifQ=="
+        },
+        {
+          "name": "vault_url",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiYXUxc2tLSFZyMmk4Z1B2Q3BuaHhJR3h1Y2NzS1ptbzdLZCtsQ1NTUkl4L2JnQWlmTmIwTmJhUXJyV0FIcFhSUnh0Q2hMa1JmdGVjdXhCcWlqcUpCdm5qUWhZMUYiLCJpIjoiZjROb3hhNGQ1dXhwWFdvUiIsIm4iOiJWYXVsdCJ9"
+        },
         {
           "name": "Rootz",
           "url": "https://rootz.so/d/21N57Y"
@@ -1529,11 +1549,14 @@
           "url": "https://buzzheavier.com/5z57cvne6qb6"
         }
       ],
-      "downloadSource": "https://dlpsgame.com/alan-wake-2-ps5/",
+      "sizeBytes": 147102629888,
+      "downloadSource": "https://pippo26442999.github.io/.exFAT/exFAT.json",
       "source": [
+        "exFAT",
         "dlpsgame.com"
       ],
       "fileFormat": [
+        "exFAT",
         "RAR",
         "Backport 7.xx"
       ],
@@ -1549,8 +1572,7 @@
           "Action"
         ]
       },
-      "_sizeProbedAt": "2026-06-27T19:02:14.305625+00:00",
-      "formatLabel": "Backport 7.xx"
+      "formatLabel": "exFAT · Backport 7.xx"
     },
     {
       "titleId": "PPSA01924",
@@ -2711,7 +2733,7 @@
           "Action"
         ]
       },
-      "_sizeProbedAt": "2026-06-28T05:32:23.543165+00:00",
+      "_sizeProbedAt": "2026-06-29T08:56:29.519281+00:00",
       "formatLabel": "PKG"
     },
     {
@@ -7268,11 +7290,43 @@
     {
       "titleId": "PPSA23226",
       "title": "Black Myth Wukong Deluxe Edition",
-      "version": "01.000",
+      "version": "01.021",
       "category": "game",
       "posterUrl": "https://pub-ce6b40c14d144a128552570bcf6bb628.r2.dev/exFAT/Black_Myth_Wukong_Deluxe_Edition.png",
-      "description": "Format: exFAT · PKG · Backport 4.xx\nTags: PPSA23226, v1.021, 9.xx, 4.xx\nSize: 169GB\nThanks: High-Speed007 for the Files and BestPig for the BackPork",
+      "description": "Format: exFAT · PKG · Backport\nTags: PPSA23226, v1.021, 9.xx, 4.xx\nSize: 169GB\nThanks: High-Speed007 for the Files and BestPig for the BackPork",
       "downloadLinks": [
+        {
+          "name": "akia_url",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiZ1VzLzV6SE1EWERCVkJSV21lSmxtZ1gxczRuSkRWYnlpUDV6WDZYdEROR2U4aVNMNERCeDU2bWhEc2NROGpDU0lRWW5XdkRWTi9nc0s5c1lvUXQ1TGVXNG95YjY0U0Y1d2hrPSIsImkiOiJsSENlaE5VNnA1ZWEvYWxRIiwibiI6IkFraWEifQ=="
+        },
+        {
+          "name": "viki_url",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiK2ZPdVpPbmp4eCtjUnl1WWdXdzRFQWJUNkZITS81UGtsbk56TmkyQ3ZacS9KaTF2ZzlNODFBY0RWdUo2NmFJRlo1WTFGelJiR2Z3T3ZqaTdaaUQ5Z2dwUFpwVnUzVDA9IiwiaSI6InlLZmJuMktmNnE3TWkvMFoiLCJuIjoiVmlraSJ9"
+        },
+        {
+          "name": "data_url",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoicWJtcUVqSTlqMTVqNEY1M0E0cGpRV2pDZWxnRnZzSW94ME5VaklXSXFESGJ0QmQyWVM0ZVZkeEZzVU5FR2NZYk5PS2pRZ245ZTgvaUZFbHg4dG96QkJMUllTb0MiLCJpIjoiUURqQVNFVmpKRWhmVVNGSiIsIm4iOiJEYXRhIn0="
+        },
+        {
+          "name": "filek_url",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoidVBLL2ZSNXFvMVdINW81TzUxRFJaR1JuQTJ1anl6Uk42RlMzL2Vhc1NmSDZuSDJPV1JkTUF3TnpVMzZLRzNrOGo3TEFTUWZxS29XYTZvcU8vek1RdUxJVjBrbS9oems9IiwiaSI6IkUxUEZaNFIrZVBvV05DNUIiLCJuIjoiRmlsZUsifQ=="
+        },
+        {
+          "name": "vault_url",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiWndNRkl1SERZVENDdkhEOGpvMUorNUVZR0ZteWVyK2ozOWN6Vy92dTF4Q1VUT0t0UHk3UUhIV3h1WkUrcmg5TlpGWTJlRkNrNGZ2bFNpN1ZxUkVKRXVyNUtLOUV2QT09IiwiaSI6IjBlbkpGUkZXTEVNQVNoWTEiLCJuIjoiVmF1bHQifQ=="
+        },
+        {
+          "name": "Akia",
+          "url": "https://akirabox.com/qw1zeJbQjGXy/file"
+        },
+        {
+          "name": "Viki",
+          "url": "https://vikingfile.com/f/W3wlQ0iMUp"
+        },
+        {
+          "name": "1File",
+          "url": "https://1fichier.com/?ouok1ppzdyflu4srgs7o&af=4186346"
+        },
         {
           "name": "Akia",
           "url": "https://akirabox.com/9QWmplBdAmEB/file"
@@ -7288,18 +7342,6 @@
         {
           "name": "Backport - Buzz",
           "url": "https://buzzheavier.com/v04b6xjh02gt"
-        },
-        {
-          "name": "Akia",
-          "url": "https://akirabox.com/qw1zeJbQjGXy/file"
-        },
-        {
-          "name": "Viki",
-          "url": "https://vikingfile.com/f/W3wlQ0iMUp"
-        },
-        {
-          "name": "1File",
-          "url": "https://1fichier.com/?ouok1ppzdyflu4srgs7o&af=4186346"
         },
         {
           "name": "1File",
@@ -7430,8 +7472,9 @@
         "dlpsgame.com"
       ],
       "fileFormat": [
-        "exFAT",
+        "Backport",
         "PKG",
+        "exFAT",
         "ZIP",
         "Backport 4.xx",
         "Backport 5.xx",
@@ -7453,7 +7496,7 @@
           "RPG"
         ]
       },
-      "formatLabel": "exFAT · PKG · Backport 4.xx"
+      "formatLabel": "exFAT · PKG · Backport"
     },
     {
       "titleId": "PPSA03469",
@@ -9542,16 +9585,16 @@
       "description": "Format: PKG\nTags: PPSA26528, v01.028, USA\nSize: 37 GB\nPassword: SuperPSX\nVoices: English\nWorks on 11.xx and higher",
       "downloadLinks": [
         {
+          "name": "Multihost",
+          "url": "https://www.keepshield.org/safe/1b4c7f6a"
+        },
+        {
           "name": "1File",
           "url": "https://1fichier.com/?nyfitaiuw14bj79vxloc&af=4186346"
         },
         {
           "name": "1File",
           "url": "https://1fichier.com/?nyfitaiuw14bj79vxloc&amp;af=4186346"
-        },
-        {
-          "name": "Multihost",
-          "url": "https://www.keepshield.org/safe/1b4c7f6a"
         },
         {
           "name": "Rootz",
@@ -11396,7 +11439,9 @@
       ],
       "sizeBytes": 5368709120,
       "downloadSource": "https://superpsx.com/dll-dd2ps5-3/",
-      "source": "superpsx.com",
+      "source": [
+        "superpsx.com"
+      ],
       "fileFormat": [
         "PKG"
       ],
@@ -11407,9 +11452,29 @@
       "title": "Darksiders 2 Deathinitive Edition",
       "version": "01.002",
       "category": "game",
-      "posterUrl": "https://dlpsgame.com/wp-content/uploads/2026/06/3-2.jpg",
-      "description": "Format: APR-EMU\nTags: PPSA23806, v1.002, 9.xx",
+      "posterUrl": "https://pub-ce6b40c14d144a128552570bcf6bb628.r2.dev/exFAT/Darksiders_2_Deathinitive_Edition.webp",
+      "description": "Format: APR-EMU · Backport\nTags: PPSA23806, v1.002, 9.xx",
       "downloadLinks": [
+        {
+          "name": "Backport - backport7xx_akia",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoieWQrM2p0T0RuUUhjTzd6Lzg5eE5QYW1SdkkzMjhlWEk0UW85QzZnN0VPTUkyY3ZuQ0lva2NRVWtRV0Y2Tm5wbGpaaGMzcGZDSG5haGRxOFdFbWJhajVqREVrbTRoVjM2cWdRPSIsImkiOiJZR3J2UDJaRnk5Q29ydmpvIiwibiI6IkFraWEifQ=="
+        },
+        {
+          "name": "Backport - backport7xx_viki",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiSDRGV2FsNWpZR3Y0aElucGRHK09PbHFBdzhMMUV0OWo4dGRBL3pFeWFGRlg1MDcxVElWeHVSL1BPRGFMUlVBZ0lOcG1pNm05N0NuK2lkSENUMnAwdVJaMjh5L0g1YkU9IiwiaSI6IlNrUGUvNGM3OXdraTRTWXMiLCJuIjoiVmlraSJ9"
+        },
+        {
+          "name": "Backport - backport7xx_data",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiZTMzQU50dE9kSlhIcitVeE9hV1BOWjlSQ3BzMXdyRGVXVW1mL3o3eTI5N3ZVdTI4SXpqZlNKU2FtaXhEa0lYQU9aTWJML01OSXIvYzd0OGNuVjRGSjlsR2ZpWHIiLCJpIjoicEZRUzlGSnNyN3dBUmVaaSIsIm4iOiJEYXRhIn0="
+        },
+        {
+          "name": "Backport - backport7xx_filek",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiNzlXak11N0huWi93eW9BbUlLRE9Yd3IvengxZ0szaTVkYnJzOWtqUkpnNlR3NzMyc0NzSDFZV3JaVjVuTnUxYlU1TVNzYXJWbXdKb01aUExaMHZzN3c1bEJBaE9nbm89IiwiaSI6IitzbU5mR0c4SVp5aFBXdTMiLCJuIjoiRmlsZUsifQ=="
+        },
+        {
+          "name": "Backport - backport7xx_vault",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiWHltQmtSNjcySTkvdDV0Ulo5MmR0QkhUY3V0ZHU5eVRoQ256L2xVTFFXSDk2M1M4eUZlR3N3UHNTNGNNY3F0ZG94bzRYeGFaTDF3RDVING43NGhYRExQY0txckpsdz09IiwiaSI6IjBITmhQSTN3MEpCOU50TjciLCJuIjoiVmF1bHQifQ=="
+        },
         {
           "name": "Viki",
           "url": "https://filecrypt.cc/Container/B0F8DFA924.html"
@@ -11431,11 +11496,14 @@
           "url": "https://clk.sh/full?api=1a83dc23a56e37f8d4635da35fc71e6a9e912db2&url=aHR0cHM6Ly9maWxlY3J5cHQuY2MvQ29udGFpbmVyLzVCN0NERTNDNzIuaHRtbA==&type=2"
         }
       ],
+      "sizeBytes": 21474836480,
       "downloadSource": "https://dlpsgame.com/darksiders-2-deathinitive-edition-ps5/",
       "source": [
+        "exFAT",
         "dlpsgame.com"
       ],
       "fileFormat": [
+        "Backport",
         "APR-EMU"
       ],
       "_enrichedAt": "2026-06-22T12:41:41.447698+00:00",
@@ -11451,7 +11519,7 @@
           "RPG"
         ]
       },
-      "formatLabel": "APR-EMU"
+      "formatLabel": "APR-EMU · Backport"
     },
     {
       "titleId": "PPSA31977",
@@ -18404,7 +18472,9 @@
       ],
       "sizeBytes": 7516192768,
       "downloadSource": "https://superpsx.com/dll-e0zups5/",
-      "source": "superpsx.com",
+      "source": [
+        "superpsx.com"
+      ],
       "fileFormat": [
         "PKG"
       ],
@@ -29075,7 +29145,9 @@
       ],
       "sizeBytes": 37580963840,
       "downloadSource": "https://superpsx.com/dll-ihceps5/",
-      "source": "superpsx.com",
+      "source": [
+        "superpsx.com"
+      ],
       "fileFormat": [
         "PKG"
       ],
@@ -29580,7 +29652,9 @@
       ],
       "sizeBytes": 35433480192,
       "downloadSource": "https://pippo26442999.github.io/.exFAT/exFAT.json",
-      "source": "exFAT",
+      "source": [
+        "exFAT"
+      ],
       "fileFormat": [
         "exFAT"
       ],
@@ -29924,6 +29998,43 @@
         ]
       },
       "formatLabel": "PKG · Backport 4.xx"
+    },
+    {
+      "titleId": "PPSA25153",
+      "title": "Jurassic World Evolution 3",
+      "version": "01.000",
+      "category": "game",
+      "posterUrl": "https://pub-ce6b40c14d144a128552570bcf6bb628.r2.dev/exFAT/Jurassic_World_Evolution_3.avif",
+      "description": "Format: Backport",
+      "downloadLinks": [
+        {
+          "name": "Backport - backport7xx_akia",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiUmNQRmJPWWsva3JjazZwaFFBM21pdzR6aS81NFl3aHAzSWRYUkppcXV0N29rSzl6cnhwOG5oV3FESnNCMGRZRi9od1BCZG1jbFMvOWcrVkxkVmtka2NZbUhkOE1uaHB0QjhvPSIsImkiOiJ1MWNyV0pJSjI1Mkg3RWdlIiwibiI6IkFraWEifQ=="
+        },
+        {
+          "name": "Backport - backport7xx_viki",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiR3VmT3VpZm1xR0VuMzZROURJNDNkMHJDNGU4aWgrVjVZVkxnYUFRdERwa2ZlekJMVDQwaGFxOGpVUWdjWUhPNUpJT3AwR2g3dlZQcGIvRitLdnV3amNsUUtTcFFJb1U9IiwiaSI6IllkbnJ1T1RQR2liQTB2RWciLCJuIjoiVmlraSJ9"
+        },
+        {
+          "name": "Backport - backport7xx_data",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiWVR6UFh2ZzF2TFF1c3dpQ0RqYjJqNDZrRGw0bUlzdXU0MHZhZUJLNVRrQm8rOTRuS2szSmdlZVJ2eEV6RGN1RjAvR3cwblZxTEhEYVY4M0I0bjBsOHVGcFlscmkiLCJpIjoiYXBRM1ZHK21NVmRyZjFEKyIsIm4iOiJEYXRhIn0="
+        },
+        {
+          "name": "Backport - backport7xx_filek",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiUCtMWXUxTWlDdUQ5V3NqQTdxeDAvZUdQYWx4NDRRYTNhUUc1UHpQRjlRL2NkOVYycnlyZW5BNExvemE4QlE2OVJlTjRxdmxOSHo1akdaZEpkd1FMYVlhUFk1WDZNWlk9IiwiaSI6IjM5N1hSUm9vakplRjNyRCsiLCJuIjoiRmlsZUsifQ=="
+        },
+        {
+          "name": "Backport - backport7xx_vault",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiMGpnN2lRaWhmZU5Pb1FIVE9La2ZtRTlBbzJKK2g3ZTZmMkhiQnBKYzdsR0gvK3hGRDF0TjZCS2NuUzN2M3Q1Z3ZIN0ZsRHVCZkR0MFA2RkFQTGF6RjQ1WDVHMzI5UT09IiwiaSI6IlEzeWNEa05iK2RINThhb2oiLCJuIjoiVmF1bHQifQ=="
+        }
+      ],
+      "sizeBytes": 22548578304,
+      "downloadSource": "https://pippo26442999.github.io/.exFAT/exFAT.json",
+      "source": "exFAT",
+      "fileFormat": [
+        "Backport"
+      ],
+      "formatLabel": "Backport"
     },
     {
       "titleId": "PPSA10264",
@@ -38493,7 +38604,7 @@
           "Sports"
         ]
       },
-      "_sizeProbedAt": "2026-06-28T05:32:23.543165+00:00",
+      "_sizeProbedAt": "2026-06-29T08:56:29.519281+00:00",
       "formatLabel": "PKG · APR-EMU"
     },
     {
@@ -40372,7 +40483,9 @@
       ],
       "sizeBytes": 17179869184,
       "downloadSource": "https://superpsx.com/dll-osr/",
-      "source": "superpsx.com",
+      "source": [
+        "superpsx.com"
+      ],
       "fileFormat": [
         "PKG"
       ],
@@ -42814,7 +42927,9 @@
       ],
       "sizeBytes": 42949672960,
       "downloadSource": "https://superpsx.com/dll-pmtps5/",
-      "source": "superpsx.com",
+      "source": [
+        "superpsx.com"
+      ],
       "fileFormat": [
         "PKG"
       ],
@@ -44956,7 +45071,7 @@
       "version": "01.037",
       "category": "game",
       "posterUrl": "https://pub-ce6b40c14d144a128552570bcf6bb628.r2.dev/exFAT/Remnant_2.avif",
-      "description": "Format: exFAT · PKG · Backport\nTags: PPSA06693, v1.037, 6.xx, 4.xx, USA\nSize: 64GB\nCredits: Pippo26442999 x SiESPTA\nThanks: High-Speed007 for the Files and kerrdec97 for the BackPort",
+      "description": "Format: exFAT · PKG · Backport\nTags: PPSA06693, v01.037, USA\nSize: 64GB\nPassword: SuperPSX\nVoices: Chinese, English, French (France), German, Italian, Russian, Spanish\nBackport 6.xx\nWorking 10.xx — 9.xx — 8.xx — 7.xx",
       "downloadLinks": [
         {
           "name": "Akia",
@@ -48841,7 +48956,7 @@
           "RPG"
         ]
       },
-      "_sizeProbedAt": "2026-06-28T05:32:23.543165+00:00",
+      "_sizeProbedAt": "2026-06-29T08:56:29.519281+00:00",
       "formatLabel": "Folder · PKG · Backport 4.xx"
     },
     {
@@ -50587,7 +50702,9 @@
       ],
       "sizeBytes": 3221225472,
       "downloadSource": "https://superpsx.com/dll-szxps5/",
-      "source": "superpsx.com",
+      "source": [
+        "superpsx.com"
+      ],
       "fileFormat": [
         "PKG"
       ],
@@ -51922,7 +52039,9 @@
       ],
       "sizeBytes": 40802189312,
       "downloadSource": "https://pippo26442999.github.io/.exFAT/exFAT.json",
-      "source": "exFAT",
+      "source": [
+        "exFAT"
+      ],
       "fileFormat": [
         "exFAT"
       ],
@@ -60653,7 +60772,9 @@
       ],
       "sizeBytes": 2147483648,
       "downloadSource": "https://superpsx.com/dll-tmps5-2/",
-      "source": "superpsx.com",
+      "source": [
+        "superpsx.com"
+      ],
       "fileFormat": [
         "PKG"
       ],
@@ -64535,7 +64656,9 @@
       ],
       "sizeBytes": 40802189312,
       "downloadSource": "https://superpsx.com/dll-tp2ps5/",
-      "source": "superpsx.com",
+      "source": [
+        "superpsx.com"
+      ],
       "fileFormat": [
         "PKG"
       ],
@@ -65090,6 +65213,43 @@
         ]
       },
       "formatLabel": "exFAT · PKG"
+    },
+    {
+      "titleId": "PPSA03541",
+      "title": "UFC 5",
+      "version": "01.031",
+      "category": "game",
+      "posterUrl": "https://pub-ce6b40c14d144a128552570bcf6bb628.r2.dev/exFAT/UFC_5.avif",
+      "description": "Format: exFAT",
+      "downloadLinks": [
+        {
+          "name": "akia_url",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiUEFQQ2JyK3k3NXFsY1pSSUgxYkJNSDhoMTI0aWdFaG94VXd1UytrRFJzT3hkS0xrMXVzTVdHTnE3bWFpL3ZaSmFIVThnTkVramh6VEFEZ2docyt0d1VQU1JDbU9keFFBYWZBPSIsImkiOiJqZlJLL0tJcDFKQ0kvVUhKIiwibiI6IkFraWEifQ=="
+        },
+        {
+          "name": "viki_url",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiWGNlNktrSCtYRDEwR3p1SDdtTmwxTE5rMEd3STJIV2svMk5Ed1FDWGN1V1kvU1Via0w1K1RqdE9EWFR0ZVlmZzlmRW1DOHNvZnhjRmsrTWF3c3BENjRLZWNOQkp0YjA9IiwiaSI6Im11VzVsZThHZWFzeXpaVHoiLCJuIjoiVmlraSJ9"
+        },
+        {
+          "name": "data_url",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiOGc4eFdpTDRvaTJGYzV2emlQSTBVWkZyZTkraTh2bElId1pGU2xNQTVaU0VEUjE4S0VzSEZzQXR3UlNCaW5VRDNrUGs5YjBreERPWU5BaFFvMWEyblg0anJ4ZUYiLCJpIjoiUDZibk4rRVpxM1FBd3M1SiIsIm4iOiJEYXRhIn0="
+        },
+        {
+          "name": "filek_url",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiQUcvS2NpVCtGNEp0MjVQdkt6R284amcvaXVJTk5TME14cHN1dG5RRXNhTVFiY0xwVC9nQ2VPNVcrMGI4czFPUUxPUmJoR1p5ZVJsRkR6dzRJZzFCOVJGUXMxYnVpQnc9IiwiaSI6IjlpWU5uZjQwTTRqSUpwTXAiLCJuIjoiRmlsZUsifQ=="
+        },
+        {
+          "name": "vault_url",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiYU5BQUNoUjJUTlo2NHFCRkk5b0p6NE5OdzdNNVRxMFdlOHE5OU9uWjcwTTU3dTNaelZqbG02Z3AyQXNnQU5uMkhJVStVZUUzT1lsRWdqN2RQaFdTN3krMkVGRGg2dz09IiwiaSI6IjlXclMwR01NWEx4a1JVWmkiLCJuIjoiVmF1bHQifQ=="
+        }
+      ],
+      "sizeBytes": 119185342464,
+      "downloadSource": "https://pippo26442999.github.io/.exFAT/exFAT.json",
+      "source": "exFAT",
+      "fileFormat": [
+        "exFAT"
+      ],
+      "formatLabel": "exFAT"
     },
     {
       "titleId": "PPSA14376",
@@ -65702,12 +65862,32 @@
     },
     {
       "titleId": "PPSA17841",
-      "title": "Unknown 9 Awakening",
+      "title": "Unknown 9 Awakening Deluxe Edition",
       "version": "01.003",
       "category": "game",
-      "posterUrl": "https://dlpsgame.com/wp-content/uploads/2026/06/2-gbb.jpg",
-      "description": "Format: APR-EMU\nTags: PPSA17841, v1.003, 9.xx\nSize: 58 GB",
+      "posterUrl": "https://pub-ce6b40c14d144a128552570bcf6bb628.r2.dev/exFAT/Unknown_9_Awakening_Deluxe_Edition.avif",
+      "description": "Format: APR-EMU · Backport\nTags: PPSA17841, v1.003, 9.xx\nSize: 58 GB",
       "downloadLinks": [
+        {
+          "name": "akia_url",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiQ09BUXByNmQ4OXVWT2VLemROMUpqb3VHT3h3VFhkcEgwWGlPQVlkUWRKWk1hbkwwdk1rY3B6VG05eitTWmlUeTB2ZU05YlR6M1RzRzl3Y0piTFNSeGZUYUZIVGlZSHlaVGdzPSIsImkiOiI4dktCTzhYN1NCQnF4L3AwIiwibiI6IkFraWEifQ=="
+        },
+        {
+          "name": "viki_url",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiZ0FvT3cvSDYvOHJGNXJpY0ZjQ2dvS0NJRFZGY3VKcVFqaFdadHE0OUlyK3pESFRrVEJsZzJVTkZ0VVBNajlTU1hmdVpLV1J1b0VIUTFxcHRuS2dTcExvR3JGMEIvbUE9IiwiaSI6IjJkeGtQUUo3UTB0aW95ZDUiLCJuIjoiVmlraSJ9"
+        },
+        {
+          "name": "data_url",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiOXBpTFFodE1sdHQ3SWRBL0lNbWpxY25STlo0NDQ1T0dlWE4xUVRseml1T0hkdVNCMFJJbnhGVEdRTEl3YlF2NTk4Q29NTTBUNitsMEljd2lPSlZuOXRKWXdEd0wiLCJpIjoiUDRqWlo5N0I2NlNseWpsdCIsIm4iOiJEYXRhIn0="
+        },
+        {
+          "name": "filek_url",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiOFFOL3ViSmM2UVVrK1JwTmtNRTI0TTRZbVhxeHdSeHdHY1ZFS2NzSXg1cEtUSVp0SGdtMm83K1JaU0FNalBLZnFYaGdVUUs5MW1zYzlkUDdyR0ZjNEg0WU9POGh3VDg9IiwiaSI6InQwUlNieHFFY3FSSDNhME0iLCJuIjoiRmlsZUsifQ=="
+        },
+        {
+          "name": "vault_url",
+          "url": "https://pippo26442999.github.io/library-decrypt/decrypt-public.html#eyJ2IjoiMC4wLjEiLCJlIjoiakNXcUhaSWV0SThHd3MvcC83Q0E2OWZ1bzZtbVhNUmtHb2gybnFHeSthdzJOSTVnMlNCNTFBeFVhR0dBVFp4K0J4WFdHSkdxTlZURDErcm5nZTAwYWh0c3pmb3NZZz09IiwiaSI6IjdjNUV2WWJNTkNXTU5yWVEiLCJuIjoiVmF1bHQifQ=="
+        },
         {
           "name": "Rootz",
           "url": "https://www.rootz.so/d/2BijY0"
@@ -65733,16 +65913,18 @@
           "url": "https://gofile.io/d/CyAfyh"
         }
       ],
-      "downloadSource": "https://dlpsgame.com/unknown-9-awakening-ps5/",
+      "sizeBytes": 62277025792,
+      "downloadSource": "https://pippo26442999.github.io/.exFAT/exFAT.json",
       "source": [
+        "exFAT",
         "dlpsgame.com"
       ],
       "fileFormat": [
+        "Backport",
         "APR-EMU",
         "RAR"
       ],
-      "sizeBytes": 62277025792,
-      "formatLabel": "APR-EMU"
+      "formatLabel": "APR-EMU · Backport"
     },
     {
       "titleId": "PPSA07117",
@@ -65925,7 +66107,9 @@
       ],
       "sizeBytes": 21474836480,
       "downloadSource": "https://superpsx.com/dll-veps5/",
-      "source": "superpsx.com",
+      "source": [
+        "superpsx.com"
+      ],
       "fileFormat": [
         "PKG"
       ],
@@ -69243,7 +69427,9 @@
       ],
       "sizeBytes": 15032385536,
       "downloadSource": "https://superpsx.com/dll-xiiips5/",
-      "source": "superpsx.com",
+      "source": [
+        "superpsx.com"
+      ],
       "fileFormat": [
         "PKG"
       ],
