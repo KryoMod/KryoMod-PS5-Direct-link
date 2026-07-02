@@ -573,21 +573,20 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          # 1. Sync first: Fetch and reset to ensure we are on the exact same page as the remote
-          git fetch origin main
-          git reset --hard origin/main
-
-          # 2. Add files
+          
+          # Initialize the repo locally
+          git init
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          
+          # Add the generated files
           git add -f dlpsgame-ps5.json dlpsgame-ps5.warnings.txt scrape-metrics.json .scrape_manifest*.json
-
-          # 3. Commit
+          
+          # Commit the changes
           DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
-          git commit -m "chore(scrape): mise a jour catalogue PS5 ($DATE)" || echo "No changes to commit"
-
-          # 4. Push
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-          git push origin main
+          git commit -m "chore(scrape): mise a jour catalogue PS5 ($DATE)"
+          
+          # Force push to the remote, overwriting the history with this latest scraper output
+          git push origin main --force
           
       - name: Upload artifact
         if: always()
