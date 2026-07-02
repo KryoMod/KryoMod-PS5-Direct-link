@@ -568,26 +568,25 @@ jobs:
           " 2>/dev/null || true
           fi
 
-      - - name: Commit & push
+      - name: Commit & push
         if: env.MERGE_SKIPPED != '1'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          # 1. Add the files BEFORE attempting to sync
+          # Add the files
           git add -f dlpsgame-ps5.json dlpsgame-ps5.warnings.txt scrape-metrics.json .scrape_manifest*.json
           
-          # 2. Commit the changes locally
+          # Commit
           DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
           git commit -m "chore(scrape): mise a jour catalogue PS5 ($DATE)" || echo "No changes to commit"
           
-          # 3. Pull remote changes and rebase our local commit on top of them
+          # Sync and Force Push
           git fetch origin main
           git rebase origin/main
-          
-          # 4. Push the result
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-          git push origin main
+          git push origin main --force-with-lease
+          
       - name: Upload artifact
         if: always()
         uses: actions/upload-artifact@v4
