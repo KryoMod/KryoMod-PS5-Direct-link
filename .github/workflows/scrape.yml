@@ -573,16 +573,20 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          # Add the files
+          
+          # 1. Align with the remote state first to avoid "fetch first" errors
+          git fetch origin main
+          git reset --hard origin/main
+          
+          # 2. Add the files after resetting to the latest remote state
           git add -f dlpsgame-ps5.json dlpsgame-ps5.warnings.txt scrape-metrics.json .scrape_manifest*.json
-
-          # Commit
+          
+          # 3. Commit the changes
           DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
           git commit -m "chore(scrape): mise a jour catalogue PS5 ($DATE)"
-
-          # Force push to overwrite the remote state with the new data
-          git push origin main --force
+          
+          # 4. Push the result
+          git push origin main
 
       - name: Upload artifact
         if: always()
