@@ -1018,53 +1018,33 @@ def detect_file_format(groups: list[tuple[str, str]], download_links: list[dict]
     urls = [link.get("url") or "" for link in download_links]
     return detect_formats([text, *group_labels], urls=urls)
 
+def build_download_links(game_soup: BeautifulSoup) -> dict:
+    """
+    Parses the game page and groups links by their section headers.
+    Returns a dictionary: { "Header Name": [{"name": "Host", "url": "..."}] }
+    """
+    grouped_links = {}
+    current_header = "Standard"
 
-def build_download_links(
-    groups: list[tuple[str, str]],
-    page_url: str,
-    session=None,
-) -> list[dict]:
-    """Construit la liste finale des downloadLinks à partir des groupes
-    de spoilers. Suit les redirections downloadgameps3.net et déduplique."""
-    seen_urls: set[str] = set()
-    out: list[dict] = []
-
-    for label, html_fragment in groups:
-        group = detect_group(label)
-        for text, href in extract_links_from_html(html_fragment, page_url):
-            # On calcule d'abord le miroir à partir du TEXTE du lien (Akia/Viki/...)
-            # car c'est la seule info fiable avant résolution.
-            mirror_hint = extract_mirror_name(href, text).lower()
-
-            # Résout downloadgameps3.net → akirabox/vikingfile/datanodes
-            direct = resolve_redirect(href, session, mirror_hint=mirror_hint)
-
-            # Si la résolution échoue (lien toujours sur downloadgameps3.net), on skip
-            if direct is None:
-                log.debug("    skip (non résolu): %s — %s", text, href)
-                continue
-            if is_non_host_url(direct):
-                log.debug("    skip (non-hébergeur): %s — %s", text, direct)
-                continue
-
-            # On recalcule le nom du miroir à partir de l'URL finale (plus fiable)
-            mirror = extract_mirror_name(direct, text)
-
-            # Si on a un groupe spécifique (Backport/DLC/Dump/exFAT), on préfixe
-            # le nom pour rester compatible avec le script.js convertSingleGame.
-            if group in ("Backport", "DLC", "Dump", "exFAT"):
-                name = f"{group} - {mirror}"
-            else:
-                name = mirror
-
-            dedupe_key = direct
-            if dedupe_key in seen_urls:
-                continue
-            seen_urls.add(dedupe_key)
-            out.append({"name": name, "url": direct})
-
-    return out
-
+    # Find all relevant elements (adjust selectors to match your site's DOM)
+    for element in game_soup.select("h3, .download-section, .spoiler"):
+        text = element.get_text(strip=True)
+        # If this is a header, update the current_header
+        if "PPSA" in text or "USA" in text or "EUR" in text:
+            current_header = text
+            continue
+        
+        # If this is a link container, extract links and add to grouped_links[current_header]
+        if current_header not in grouped_links:
+            grouped_links[current_header] = []
+            
+        for link in element.select("a"):
+            name = link.get_text(strip=True)
+            url = link.get("href")
+            # Keep your existing resolve_redirect/host mapping logic here
+            grouped_links[current_header].append({"name": name, "url": url})
+            
+    return grouped_links
 
 def extract_metadata(
     soup: BeautifulSoup,
@@ -1279,7 +1259,11 @@ def scrape_game_page(url: str, session=None) -> dict | None:
     download_links = build_download_links(groups, url, session)
 
     if not download_links:
-        log.debug("    aucun lien de téléchargement direct trouvé")
+        log.debugdownload_links = build_download_links(groups, url, session)
+
+    if not download_links:
+        log.debug("   aucun lien de téléchargement direct trouvé")
+        return None("    aucun lien de téléchargement direct trouvé")
         return None
 
     # Si pas de titleId, on en génère un placeholder
@@ -1301,7 +1285,10 @@ def scrape_game_page(url: str, session=None) -> dict | None:
     # rejeter (skip) l'entrée par Pegasus DL, alors qu'un champ absent est ignoré.
     if meta.get("sizeBytes"):
         package["sizeBytes"] = meta["sizeBytes"]
-    log.info("    ✓ %s — %d liens", meta["title"], len(download_links))
+        
+    # Calculate total links across all versions for the log
+    total_links = sum(len(links) for links in download_links.values())
+    log.info("   ✓ %s — %d versions, %d liens au total", meta["title"], len(download_links), total_links)
     return package
 
 
