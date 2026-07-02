@@ -603,7 +603,10 @@ jobs:
           else
             DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
             git commit -m "chore(scrape): mise a jour catalogue PS5 ($DATE)"
-            git push
+            
+            # FORCE SYNC BEFORE PUSH
+            git pull --rebase origin main
+            git push origin main
           fi
 
       - name: Upload artifact
