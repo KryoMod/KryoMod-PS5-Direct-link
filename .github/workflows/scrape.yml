@@ -568,56 +568,26 @@ jobs:
           " 2>/dev/null || true
           fi
 
-      - name: Commit & push
-        # ITEM 6 : on ne committe QUE si la fusion a réussi (MERGE_SKIPPED != 1).
-        # Sur run dégradé/refusé ou aucune source fraîche, l'existant reste intact.
+      - - name: Commit & push
         if: env.MERGE_SKIPPED != '1'
         run: |
-          git config user.name  "github-actions[bot]"
+          git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
+          
+          # 1. Add the files BEFORE attempting to sync
+          git add -f dlpsgame-ps5.json dlpsgame-ps5.warnings.txt scrape-metrics.json .scrape_manifest*.json
+          
+          # 2. Commit the changes locally
+          DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
+          git commit -m "chore(scrape): mise a jour catalogue PS5 ($DATE)" || echo "No changes to commit"
+          
+          # 3. Pull remote changes and rebase our local commit on top of them
           git fetch origin main
-          git checkout main
           git rebase origin/main
-
-          echo "--- Fichiers présents ---"
-          ls -la dlpsgame-ps5.json dlpsgame-ps5.warnings.txt scrape-metrics.json 2>&1 || true
-          echo "--- git status (avant add) ---"
-          git status --short
-
-          git add -f dlpsgame-ps5.json
-          [ -f dlpsgame-ps5.warnings.txt ] && git add -f dlpsgame-ps5.warnings.txt || true
-          [ -f scrape-metrics.json ] && git add -f scrape-metrics.json || true
-
-          # ITEM 2 : on versionne les manifests incrémentaux (last_run + 'modified'
-          # par entrée) pour piloter le vrai incrémental entre runs.
-          [ -f .scrape_manifest.json ] && git add -f .scrape_manifest.json || true
-          [ -f .scrape_manifest_api.json ] && git add -f .scrape_manifest_api.json || true
-          [ -f .scrape_manifest_superpsx.json ] && git add -f .scrape_manifest_superpsx.json || true
-
-          echo "--- git status (apres add) ---"
-          git status --short
-
-          if git diff --cached --quiet; then
-            echo "Aucun changement a committer."
-          else
-            # Ensure we are tracking the remote
-            git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-            git fetch origin main
-            
-            # Reset to ensure local and remote are identical
-            git reset --hard origin/main
-            
-            # Re-apply the changes
-            git add -f dlpsgame-ps5.json .scrape_manifest*.json scrape-metrics.json
-            
-            DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
-            git commit -m "chore(scrape): mise a jour catalogue PS5 ($DATE)"
-            
-            # Now push
-            git push origin main
-          fi
-
+          
+          # 4. Push the result
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push origin main
       - name: Upload artifact
         if: always()
         uses: actions/upload-artifact@v4
