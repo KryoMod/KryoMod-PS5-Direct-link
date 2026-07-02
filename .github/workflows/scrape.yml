@@ -121,7 +121,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -574,19 +574,16 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # 1. Pull the latest changes from the remote to get up to date
-          git pull --rebase origin main
-
-          # 2. Add files
+          # Add the files
           git add -f dlpsgame-ps5.json dlpsgame-ps5.warnings.txt scrape-metrics.json .scrape_manifest*.json
 
-          # 3. Commit
+          # Commit
           DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
-          git commit -m "chore(scrape): mise a jour catalogue PS5 ($DATE)" || echo "No changes to commit"
-          
-          # 4. Push
-          git push origin main
-          
+          git commit -m "chore(scrape): mise a jour catalogue PS5 ($DATE)"
+
+          # Force push to overwrite the remote state with the new data
+          git push origin main --force
+
       - name: Upload artifact
         if: always()
         uses: actions/upload-artifact@v4
