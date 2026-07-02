@@ -601,11 +601,20 @@ jobs:
           if git diff --cached --quiet; then
             echo "Aucun changement a committer."
           else
+            # Ensure we are tracking the remote
+            git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+            git fetch origin main
+            
+            # Reset to ensure local and remote are identical
+            git reset --hard origin/main
+            
+            # Re-apply the changes
+            git add -f dlpsgame-ps5.json .scrape_manifest*.json scrape-metrics.json
+            
             DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
             git commit -m "chore(scrape): mise a jour catalogue PS5 ($DATE)"
             
-            # FORCE SYNC BEFORE PUSH
-            git pull --rebase origin main
+            # Now push
             git push origin main
           fi
 
