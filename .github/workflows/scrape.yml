@@ -571,23 +571,21 @@ jobs:
       - name: Commit & push
         if: env.MERGE_SKIPPED != '1'
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          
-          # 1. Setup a fresh local branch
-          git init
-          git checkout -b main
-          
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # 1. Pull the latest changes from the remote to get up to date
+          git pull --rebase origin main
+
           # 2. Add files
           git add -f dlpsgame-ps5.json dlpsgame-ps5.warnings.txt scrape-metrics.json .scrape_manifest*.json
-          
+
           # 3. Commit
           DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
-          git commit -m "chore(scrape): mise a jour catalogue PS5 ($DATE)"
+          git commit -m "chore(scrape): mise a jour catalogue PS5 ($DATE)" || echo "No changes to commit"
           
-          # 4. Force override the remote
-          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.github.repository }}.git
-          git push origin main --force
+          # 4. Push
+          git push origin main
           
       - name: Upload artifact
         if: always()
