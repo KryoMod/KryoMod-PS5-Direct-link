@@ -576,6 +576,10 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          git fetch origin main
+          git checkout main
+          git rebase origin/main
+
           echo "--- Fichiers présents ---"
           ls -la dlpsgame-ps5.json dlpsgame-ps5.warnings.txt scrape-metrics.json 2>&1 || true
           echo "--- git status (avant add) ---"
